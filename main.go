@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/algao1/iv3/fetcher"
@@ -27,6 +29,13 @@ func verifyFlags(logger *zap.Logger) {
 	if influxdbToken == "" {
 		logger.Fatal("no InfluxDB token provided")
 	}
+}
+
+func HelloServer(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("This is an example server.\n"))
+	// fmt.Fprintf(w, "This is an example server.\n")
+	// io.WriteString(w, "This is an example server.\n")
 }
 
 func main() {
@@ -60,5 +69,10 @@ func main() {
 
 	// Block.
 	logger.Info("everything started successfully!")
-	select {}
+
+	http.HandleFunc("/hello", HelloServer)
+	err = http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }

@@ -5,3 +5,7 @@ exp*
 .data
 .env
 config.yaml
+
+# Misc.
+server.crt
+server.key
