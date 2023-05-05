@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-	"log"
-	"net/http"
 	"os"
 
 	"github.com/algao1/iv3/fetcher"
+	"github.com/algao1/iv3/server"
 	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -31,11 +30,13 @@ func verifyFlags(logger *zap.Logger) {
 	}
 }
 
-func HelloServer(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("This is an example server.\n"))
-	// fmt.Fprintf(w, "This is an example server.\n")
-	// io.WriteString(w, "This is an example server.\n")
+func verifyConfig(cfg Config, logger *zap.Logger) {
+	if cfg.API.Username == "" {
+		logger.Fatal("no API username provided")
+	}
+	if cfg.API.Password == "" {
+		logger.Fatal("no API password provided")
+	}
 }
 
 func main() {
@@ -53,6 +54,7 @@ func main() {
 	if err = yaml.Unmarshal(file, &cfg); err != nil {
 		logger.Fatal("unable to unmarshal config file", zap.Error(err))
 	}
+	verifyConfig(cfg, logger)
 
 	influxClient := store.NewInfluxDB(
 		influxdbToken,
@@ -67,12 +69,13 @@ func main() {
 		logger.Named("dexcom"),
 	)
 
-	// Block.
-	logger.Info("everything started successfully!")
+	s := server.NewHttpServer(
+		cfg.API.Username,
+		cfg.API.Password,
+		influxClient,
+		logger.Named("httpServer"),
+	)
 
-	http.HandleFunc("/hello", HelloServer)
-	err = http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	logger.Info("everything started successfully!")
+	s.Serve() // Blocking.
 }

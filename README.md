@@ -34,3 +34,13 @@ So, I have decided to keep it more simple, and rely more heavily on third-party 
 - Retool
 
 ## Quickstart
+
+## Other
+Setup will also require a few other things, mostly left as a note to myself.
+- A .env file with the `INFLUXDB_TOKEN`
+    - Generally used for things that have to be used by Task or docker compose
+- A config.yaml file with certain configs
+    - Generally only used for application-level settings
+- A domain name, and an SSL certificate for HTTPS
+    - This will be needed for authentication, and for Retool API integrations
+    - `certfile.crt`, `keyfile.key`

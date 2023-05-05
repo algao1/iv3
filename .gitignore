@@ -7,5 +7,5 @@ exp*
 config.yaml
 
 # Misc.
-server.crt
-server.key
+*.crt
+*.key

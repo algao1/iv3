@@ -2,8 +2,6 @@ version: '3'
 
 dotenv: [".env"]
 
-# --env-file
-
 tasks:
   default:
     cmds:
@@ -11,6 +9,7 @@ tasks:
 
   build:
     desc: "Build the docker composefile"
+    deps: [ssl-gen]
     cmds:
       - docker compose build --parallel
 
@@ -18,6 +17,10 @@ tasks:
     desc: "Start all the necessary containers"
     cmds:
       - docker compose --env-file .env up -d
+
+  go:
+    cmds:
+      - go run *.go -influxdbToken $INFLUXDB_TOKEN
 
   # InfluxDB.
   # idb-nv, idb-new, idb-up, idp-down are meant for standalone
@@ -63,3 +66,8 @@ tasks:
     cmds:
       - curl -fsSL https://get.docker.com -o get-docker.sh
       - sh get-docker.sh
+
+  # SSL-gen. Don't run on local dev environment.
+  ssl-gen:
+    cmds:
+      - if [ "$IV3_ENV" != "dev" ]; then ./ssl-gen.sh; fi

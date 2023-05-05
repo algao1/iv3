@@ -53,10 +53,35 @@ func (c *InfluxDBClient) WriteGlucosePoints(glucose []fetcher.GlucosePoint) erro
 
 		err := writeAPI.WritePoint(context.Background(), point)
 		if err != nil {
-			c.logger.Error("unable to write glucose point to InfluxDB")
 			return fmt.Errorf("unable to write glucose point to InfluxDB: %w", err)
 		}
 		c.logger.Debug("wrote glucose point", zap.Time("ts", point.Time()), zap.Any("fields", fields))
 	}
 	return nil
+}
+
+func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int64) ([]fetcher.GlucosePoint, error) {
+	queryAPI := c.client.QueryAPI(Org)
+	// Currently, this only grabs all the values, and not the trends.
+	// I am thinking if that is needed, we will need to remove the filter.
+	fluxQuery := fmt.Sprintf(`
+        data = from(bucket: "%s")
+            |> range(start: %d)
+            |> filter(fn: (r) => r["_field"] == "value")
+            |> yield()
+    `, GlucoseBucket, startTs)
+
+	result, err := queryAPI.Query(context.Background(), fluxQuery)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read glucose points between %d and %d: %w", startTs, endTs, err)
+	}
+
+	glucose := make([]fetcher.GlucosePoint, 0)
+	for result.Next() {
+		glucose = append(glucose, fetcher.GlucosePoint{
+			Value: result.Record().Value().(float64),
+			Time:  result.Record().Time(),
+		})
+	}
+	return glucose, nil
 }
