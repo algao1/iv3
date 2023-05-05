@@ -66,10 +66,10 @@ func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]fetcher.Glucos
 	// I am thinking if that is needed, we will need to remove the filter.
 	fluxQuery := fmt.Sprintf(`
         data = from(bucket: "%s")
-            |> range(start: %d)
+            |> range(start: %d, stop: %d)
             |> filter(fn: (r) => r["_field"] == "value")
             |> yield()
-    `, GlucoseBucket, startTs)
+    `, GlucoseBucket, startTs, endTs)
 
 	result, err := queryAPI.Query(context.Background(), fluxQuery)
 	if err != nil {
