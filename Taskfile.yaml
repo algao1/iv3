@@ -12,7 +12,7 @@ tasks:
   build:
     desc: "Build the docker composefile"
     cmds:
-      - docker composebuild --parallel
+      - docker compose build --parallel
 
   all:
     desc: "Start all the necessary containers"

@@ -15,5 +15,7 @@ WORKDIR /go/iv3
 
 COPY --from=service_builder /go/iv3/iv3 .
 COPY --from=service_builder /go/iv3/config.yaml .
+COPY --from=service_builder /go/iv3/server.crt .
+COPY --from=service_builder /go/iv3/server.key .
 
 CMD ./iv3 -influxdbToken ${INFLUXDB_TOKEN} -influxdbUrl ${INFLUXDB_URL}
