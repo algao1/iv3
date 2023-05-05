@@ -1,0 +1,23 @@
+version: "3.7"
+services:
+
+  iv3:
+    build:
+      context: .
+      dockerfile: dockerfile
+    environment:
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_URL: "http://influxdb:8086"
+    container_name: iv3
+    depends_on:
+      - influxdb
+
+  influxdb:
+    image: "influxdb:2.7.0"
+    container_name: influxdb
+    volumes:
+      - type: bind
+        source: .data/influxdb2
+        target: /var/lib/influxdb2
+    ports:
+      - "8086:8086"

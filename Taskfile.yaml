@@ -1,0 +1,59 @@
+version: '3'
+
+dotenv: [".env"]
+
+# --env-file
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+
+  build:
+    desc: "Build the docker-compose file"
+    cmds:
+      - docker-compose build --parallel
+
+  all:
+    desc: "Start all the necessary containers"
+    cmds:
+      - docker-compose --env-file .env up -d
+
+  # InfluxDB.
+  # idb-nv, idb-new, idb-up, idp-down are meant for standalone
+  # instances, and quick testing.
+  idb-nv:
+    cmds:
+      - docker run
+        --name influxdb
+        -p 8086:8086
+        {{.CLI_ARGS}}
+        -d influxdb:2.7.0
+      - echo "InfluxDB UI on http://localhost:8086"
+
+  idb-new:
+    cmds:
+      - task idb-nv -- 
+        --volume $(pwd)/.data/influxdb2:/var/lib/influxdb2
+  
+  idb-up:
+    cmds:
+      - docker start $(docker ps -a -qf "name=influxdb")
+
+  idb-down:
+    cmds:
+      - docker stop $(docker ps -qf "name=influxdb")
+
+  # Can be used in conjunction with docker-compose instances.
+  idb-backup:
+    cmds:
+      - influx backup .data/backup/$(date '+%Y-%m-%d_%H-%M') -t $INFLUXDB_TOKEN
+
+  idb-restore:
+    cmds:
+      - echo "restoring to version {{.BACKUP_VERSION}}"
+      - influx restore {{.BACKUP_VERSION}} --full -t $INFLUXDB_TOKEN
+    vars:
+      LATEST_VERSION:
+        sh: ls -d .data/backup/* | tail -1
+      BACKUP_VERSION: "{{.BACKUP_VERSION | default .LATEST_VERSION }}"

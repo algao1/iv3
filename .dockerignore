@@ -1,0 +1,7 @@
+# Hide all experimental changes.
+exp*
+
+# Hide data.
+.data
+.media
+.github
