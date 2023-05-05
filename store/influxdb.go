@@ -60,7 +60,7 @@ func (c *InfluxDBClient) WriteGlucosePoints(glucose []fetcher.GlucosePoint) erro
 	return nil
 }
 
-func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int64) ([]fetcher.GlucosePoint, error) {
+func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error) {
 	queryAPI := c.client.QueryAPI(Org)
 	// Currently, this only grabs all the values, and not the trends.
 	// I am thinking if that is needed, we will need to remove the filter.

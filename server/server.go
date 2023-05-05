@@ -3,8 +3,10 @@ package server
 import (
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/algao1/iv3/fetcher"
@@ -12,7 +14,7 @@ import (
 )
 
 type GlucosePointsReader interface {
-	ReadGlucosePoints(startTs, endTs int64) ([]fetcher.GlucosePoint, error)
+	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 }
 
 type HttpServer struct {
@@ -50,7 +52,36 @@ func (s *HttpServer) Serve() {
 }
 
 func (s *HttpServer) getGlucoseHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Should be getting glucose...")
+	s.logger.Info("got GET request for /glucose", zap.Any("query", r.URL.Query()))
+
+	startStr := r.URL.Query().Get("start")
+	if startStr == "" {
+		fmt.Fprintln(w, "no start timestamp provided")
+		return
+	}
+	startTs, err := strconv.Atoi(startStr)
+	if err != nil {
+		fmt.Fprintln(w, "start timestamp is not int: %w", err)
+		return
+	}
+
+	endStr := r.URL.Query().Get("end")
+	if endStr == "" {
+		fmt.Fprintln(w, "no end timestamp provided")
+		return
+	}
+	endTs, err := strconv.Atoi(endStr)
+	if err != nil {
+		fmt.Fprintln(w, "end timestamp is not int: %w", err)
+		return
+	}
+
+	glucose, err := s.reader.ReadGlucosePoints(startTs, endTs)
+	if err != nil {
+		fmt.Fprintln(w, "unable to fetch glucose: %w", err)
+		return
+	}
+	json.NewEncoder(w).Encode(glucose)
 }
 
 // This is some very basic authentication, I think it is ok for now.
