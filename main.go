@@ -56,11 +56,14 @@ func main() {
 	}
 	verifyConfig(cfg, logger)
 
-	influxClient := store.NewInfluxDB(
+	influxClient, err := store.NewInfluxDB(
 		influxdbToken,
 		influxdbUrl,
 		logger.Named("influxdb"),
 	)
+	if err != nil {
+		logger.Fatal("unable to create InfluxDB client", zap.Error(err))
+	}
 
 	fetcher.NewDexcom(
 		cfg.Dexcom.Account,

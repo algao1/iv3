@@ -7,6 +7,7 @@ import (
 	"github.com/algao1/iv3/fetcher"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +26,7 @@ type InfluxDBClient struct {
 	url   string
 }
 
-func NewInfluxDB(token, url string, logger *zap.Logger) *InfluxDBClient {
+func NewInfluxDB(token, url string, logger *zap.Logger) (*InfluxDBClient, error) {
 	client := &InfluxDBClient{
 		client: influxdb2.NewClient(url, token),
 		logger: logger,
@@ -33,13 +34,42 @@ func NewInfluxDB(token, url string, logger *zap.Logger) *InfluxDBClient {
 		url:    url,
 	}
 
-	_, err := client.client.Ping(context.Background())
+	// Temporary, will set timeout someday...
+	ctx := context.Background()
+
+	_, err := client.client.Ping(ctx)
 	if err != nil {
-		logger.Info("unable to ping InfluxDB server", zap.Error(err))
+		return nil, fmt.Errorf("unable to ping InfluxDB server: %w", err)
 	}
 	logger.Info("started InfluxDB client", zap.String("token", token), zap.String("url", url))
 
-	return client
+	bucketsAPI := client.client.BucketsAPI()
+	orgs, err := client.client.OrganizationsAPI().GetOrganizations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get organizations: %w", err)
+	}
+
+	var iv3Org domain.Organization
+	for _, org := range *orgs {
+		if org.Name == Org {
+			iv3Org = org
+			break
+		}
+	}
+
+	var bucketNames = []string{GlucoseBucket, InsulinBucket, EventsBucket}
+	for _, bucketName := range bucketNames {
+		_, err := bucketsAPI.FindBucketByName(context.Background(), bucketName)
+		if err == nil {
+			continue
+		}
+		_, err = bucketsAPI.CreateBucketWithName(context.Background(), &iv3Org, bucketName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create bucket %s: %w", bucketName, err)
+		}
+	}
+
+	return client, nil
 }
 
 func (c *InfluxDBClient) WriteGlucosePoints(glucose []fetcher.GlucosePoint) error {
