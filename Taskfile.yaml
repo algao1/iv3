@@ -16,6 +16,7 @@ tasks:
   all:
     desc: "Start all the necessary containers"
     cmds:
+      - if [ "$IV3_ENV" == "dev" ]; then exit 1; fi
       - docker compose --env-file .env up -d
 
   dev:
