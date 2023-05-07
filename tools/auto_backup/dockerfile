@@ -1,0 +1,28 @@
+FROM golang:1.20-alpine AS build_base
+WORKDIR /go/auto_backup
+
+# This is not the most efficient...
+COPY go.mod go.sum ./
+RUN go mod download
+
+FROM build_base as service_builder
+WORKDIR /go/auto_backup
+
+COPY ./tools/auto_backup ./
+COPY config.yaml ./
+RUN go build -o auto_backup *.go
+
+# Maybe this is slightly overkill.
+FROM alpine:latest as service
+WORKDIR /go/auto_backup
+
+RUN apk add --no-cache tar
+
+RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.1-linux-amd64.tar.gz
+RUN tar xvzf ./influxdb2-client-2.7.1-linux-amd64.tar.gz
+RUN cp influx /usr/local/bin/
+
+COPY --from=service_builder /go/auto_backup/auto_backup .
+COPY --from=service_builder /go/auto_backup/config.yaml .
+
+CMD ./auto_backup
