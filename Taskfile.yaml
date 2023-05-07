@@ -18,6 +18,10 @@ tasks:
     cmds:
       - docker compose --env-file .env up -d
 
+  dev:
+    cmds:
+      - docker compose --env-file .env -f docker-compose.dev.yaml up -d --remove-orphans
+
   go:
     cmds:
       - go run *.go -influxdbToken $INFLUXDB_TOKEN
