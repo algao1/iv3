@@ -12,19 +12,22 @@ Yet another integrated T1D management solution.
 </div>
 
 ## Quickstart
+```
+task build
+task all
+```
 
 ## What's Different?
 This time around, I want to:
 - Avoid having to write/support a Python graph rendering service
-- Avoid having to maintain Discord functionality (it is a nice-to-have)
-- Redesign some architecture, to make it easier to maintain
+- Avoid having to maintain Discord functionality
+- Redesign some architecture, making it easier to maintian
 
 So, I have decided to keep it more simple, and rely more heavily on third-party integrations for certain functionality.
-- Use Retool for realtime dashboards and CRUD (insulin, etc.)
-    - Use Discord only for notifications, keeps it low-code
+- Use Retool for realtime dashboards and input
 - Use InfluxDB instead of MongoDB for storing timeseries data
-- Better CI/CD, fearless and seamless deployments
 - More robust backups, and backup to blob storage
+- Better CI/CD, fearless and seamless deployments
 - Make the process easier to spin-up experiments for data pipelines
 
 ## Architecture
