@@ -63,7 +63,7 @@ func main() {
 	url := os.Getenv("INFLUXDB_URL")
 
 	s := gocron.NewScheduler(time.UTC)
-	_, err = s.Every(24).Hours().Do(func() {
+	_, err = s.Every(1).Day().At("00:00").Do(func() {
 		err := backupAndUpload(s3Client, token, url)
 		if err != nil {
 			logger.Error("unable to backup and upload to s3", zap.Error(err))
