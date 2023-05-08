@@ -115,3 +115,47 @@ func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]fetcher.Glucos
 	}
 	return glucose, nil
 }
+
+func (c *InfluxDBClient) WriteInsulinPoint(insulin fetcher.InsulinPoint) error {
+	writeAPI := c.client.WriteAPIBlocking(Org, InsulinBucket)
+	fields := map[string]any{
+		"value": insulin.Value,
+		"type":  insulin.Type,
+	}
+	tags := map[string]string{
+		"type": insulin.Type,
+	}
+	point := write.NewPoint("insulin", tags, fields, insulin.Time)
+
+	err := writeAPI.WritePoint(context.Background(), point)
+	if err != nil {
+		return fmt.Errorf("unable to write insulin point to InfluxDB: %w", err)
+	}
+	c.logger.Debug("wrote insulin point", zap.Time("ts", point.Time()), zap.Any("fields", fields))
+	return nil
+}
+
+func (c *InfluxDBClient) ReadInsulinPoints(startTs, endTs int) ([]fetcher.InsulinPoint, error) {
+	queryAPI := c.client.QueryAPI(Org)
+	fluxQuery := fmt.Sprintf(`
+        data = from(bucket: "%s")
+            |> range(start: %d, stop: %d)
+            |> filter(fn: (r) => r["_field"] == "value")
+            |> yield()
+    `, InsulinBucket, startTs, endTs)
+
+	result, err := queryAPI.Query(context.Background(), fluxQuery)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read insulin points between %d and %d: %w", startTs, endTs, err)
+	}
+
+	insulin := make([]fetcher.InsulinPoint, 0)
+	for result.Next() {
+		insulin = append(insulin, fetcher.InsulinPoint{
+			Value: int(result.Record().Value().(int64)),
+			Type:  result.Record().ValueByKey("type").(string),
+			Time:  result.Record().Time(),
+		})
+	}
+	return insulin, nil
+}
