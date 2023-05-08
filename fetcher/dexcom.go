@@ -54,15 +54,12 @@ func NewDexcom(account, password string,
 }
 
 func (c *DexcomClient) writePeriodic() {
-	ticker := time.NewTicker(5 * time.Minute)
-	for ; true; <-ticker.C {
+	for {
 		glucose, err := c.Glucose()
 		if err != nil {
 			c.logger.Warn("unable to get glucose points", zap.Error(err))
 			continue
 		}
-		dur := time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
-		ticker = time.NewTicker(dur)
 
 		for _, writer := range c.writers {
 			err := writer.WriteGlucosePoints(glucose)
@@ -70,6 +67,9 @@ func (c *DexcomClient) writePeriodic() {
 				c.logger.Warn("unable to write glucose points to writer", zap.Error(err))
 			}
 		}
+
+		dur := time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
+		time.Sleep(dur)
 	}
 }
 
