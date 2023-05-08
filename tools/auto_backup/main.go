@@ -68,12 +68,16 @@ func main() {
 		if err != nil {
 			logger.Error("unable to backup and upload to s3", zap.Error(err))
 		}
+		logger.Info("backup and upload to s3 successful")
 	})
 	if err != nil {
 		logger.Fatal("unable to create new scheduler", zap.Error(err))
 	}
 
-	s.StartBlocking()
+	// Run once at start.
+	s.StartAsync()
+	s.RunAll()
+	select {}
 }
 
 func backupAndUpload(s3Client *s3.S3, influxdbToken, influxdbUrl string) error {
