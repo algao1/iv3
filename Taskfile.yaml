@@ -3,23 +3,20 @@ version: '3'
 dotenv: [".env"]
 
 tasks:
-  default:
-    cmds:
-      - task --list-all
-
   build:
-    desc: "Build the docker composefile"
+    desc: "Build the docker compose file"
     deps: [ssl-gen]
     cmds:
       - docker compose build --parallel
 
   all:
-    desc: "Start all the necessary containers"
+    desc: "Start all the containers"
     cmds:
       - if [ "$IV3_ENV" == "dev" ]; then exit 1; fi
       - docker compose --env-file .env up -d
 
   dev:
+    desc: "Start all the containers (-auto_backup) in dev mode"
     cmds:
       - docker compose --env-file .env -f docker-compose.dev.yaml up -d --remove-orphans
 
@@ -54,10 +51,12 @@ tasks:
 
   # Can be used in conjunction with docker composeinstances.
   idb-backup:
+    desc: "Manually backup InfluxDB"
     cmds:
       - influx backup .data/backup/$(date '+%Y-%m-%d_%H-%M') -t $INFLUXDB_TOKEN
 
   idb-restore:
+    desc: "Manually restore InfluxDB to the latest backup"
     cmds:
       - echo "restoring to version {{.BACKUP_VERSION}}"
       - influx restore {{.BACKUP_VERSION}} --full -t $INFLUXDB_TOKEN
