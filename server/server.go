@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"go.uber.org/zap"
 )
@@ -20,8 +21,11 @@ type GlucosePointsReader interface {
 type HttpServer struct {
 	username string
 	password string
-	reader   GlucosePointsReader
-	logger   *zap.Logger
+
+	reader  GlucosePointsReader
+	insulin []config.InsulinConfig
+
+	logger *zap.Logger
 }
 
 func NewHttpServer(username, password string,
@@ -34,9 +38,14 @@ func NewHttpServer(username, password string,
 	}
 }
 
+func (s *HttpServer) RegisterInsulin(insulin []config.InsulinConfig) {
+	s.insulin = insulin
+}
+
 func (s *HttpServer) Serve() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/glucose", s.basicAuth(s.getGlucoseHandler))
+	mux.HandleFunc("/insulinTypes", s.basicAuth(s.getInsulinTypesHandler))
 
 	srv := &http.Server{
 		Addr:         ":443",
@@ -82,6 +91,11 @@ func (s *HttpServer) getGlucoseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(glucose)
+}
+
+func (s *HttpServer) getInsulinTypesHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got GET request for /insulin", zap.Any("query", r.URL.Query()))
+	json.NewEncoder(w).Encode(s.insulin)
 }
 
 // This is some very basic authentication, I think it is ok for now.

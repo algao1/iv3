@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/server"
 	"github.com/algao1/iv3/store"
@@ -30,7 +31,7 @@ func verifyFlags(logger *zap.Logger) {
 	}
 }
 
-func verifyConfig(cfg Config, logger *zap.Logger) {
+func verifyConfig(cfg config.Config, logger *zap.Logger) {
 	if cfg.API.Username == "" {
 		logger.Fatal("no API username provided")
 	}
@@ -50,7 +51,7 @@ func main() {
 		logger.Fatal("unable to read config file", zap.Error(err))
 	}
 
-	cfg := Config{}
+	cfg := config.Config{}
 	if err = yaml.Unmarshal(file, &cfg); err != nil {
 		logger.Fatal("unable to unmarshal config file", zap.Error(err))
 	}
@@ -78,6 +79,7 @@ func main() {
 		influxClient,
 		logger.Named("httpServer"),
 	)
+	s.RegisterInsulin(cfg.Insulin)
 
 	logger.Info("everything started successfully!")
 	s.Serve() // Blocking.
