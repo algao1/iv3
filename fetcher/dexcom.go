@@ -61,6 +61,8 @@ func (c *DexcomClient) writePeriodic() {
 			c.logger.Warn("unable to get glucose points", zap.Error(err))
 			continue
 		}
+		dur := time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
+		ticker = time.NewTicker(dur)
 
 		for _, writer := range c.writers {
 			err := writer.WriteGlucosePoints(glucose)
