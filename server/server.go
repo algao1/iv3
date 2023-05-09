@@ -19,6 +19,7 @@ type PointsReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 	ReadInsulinPoints(startTs, endTs int) ([]fetcher.InsulinPoint, error)
 	WriteInsulinPoint(point fetcher.InsulinPoint) error
+	DeleteInsulinPoints(startTs, endTs int) error
 }
 
 type HttpServer struct {
@@ -50,6 +51,7 @@ func (s *HttpServer) Serve() {
 	mux.HandleFunc("/glucose", s.basicAuth(s.getGlucoseHandler))
 	mux.HandleFunc("/insulin", s.basicAuth(s.getInsulinHandler))
 	mux.HandleFunc("/insulin/write", s.basicAuth(s.writeInsulinHandler))
+	mux.HandleFunc("/insulin/delete", s.basicAuth(s.deleteInsulinHandler))
 	mux.HandleFunc("/insulinTypes", s.basicAuth(s.getInsulinTypesHandler))
 
 	srv := &http.Server{
@@ -123,6 +125,20 @@ func (s *HttpServer) writeInsulinHandler(w http.ResponseWriter, r *http.Request)
 	err = s.readWriter.WriteInsulinPoint(point)
 	if err != nil {
 		fmt.Fprintln(w, "unable to write insulin point: %w", err)
+		return
+	}
+}
+
+func (s *HttpServer) deleteInsulinHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got DELETE request for /insulin/delete", zap.Any("query", r.URL.Query()))
+	startTs, endTs, err := getStartEndTs(r.URL.Query())
+	if err != nil {
+		fmt.Fprintln(w, "unable to parse start/end timestamps: %w", err)
+		return
+	}
+	err = s.readWriter.DeleteInsulinPoints(startTs, endTs)
+	if err != nil {
+		fmt.Fprintln(w, "unable to delete insulin points: %w", err)
 		return
 	}
 }

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/algao1/iv3/fetcher"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -133,6 +134,18 @@ func (c *InfluxDBClient) WriteInsulinPoint(insulin fetcher.InsulinPoint) error {
 	}
 	c.logger.Debug("wrote insulin point", zap.Time("ts", point.Time()), zap.Any("fields", fields))
 	return nil
+}
+
+func (c *InfluxDBClient) DeleteInsulinPoints(startTs, endTs int) error {
+	deleteAPI := c.client.DeleteAPI()
+	return deleteAPI.DeleteWithName(
+		context.Background(),
+		Org,
+		InsulinBucket,
+		time.Unix(int64(startTs), 0),
+		time.Unix(int64(endTs), 0),
+		"",
+	)
 }
 
 func (c *InfluxDBClient) ReadInsulinPoints(startTs, endTs int) ([]fetcher.InsulinPoint, error) {
