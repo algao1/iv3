@@ -16,6 +16,7 @@ const (
 	Org           = "iv3"
 	GlucoseBucket = "iv3_glucose"
 	InsulinBucket = "iv3_insulin"
+	CarbBucket    = "iv3_carb"
 	EventsBucket  = "iv3_events"
 )
 
@@ -58,7 +59,7 @@ func NewInfluxDB(token, url string, logger *zap.Logger) (*InfluxDBClient, error)
 		}
 	}
 
-	var bucketNames = []string{GlucoseBucket, InsulinBucket, EventsBucket}
+	var bucketNames = []string{GlucoseBucket, InsulinBucket, CarbBucket, EventsBucket}
 	for _, bucketName := range bucketNames {
 		_, err := bucketsAPI.FindBucketByName(ctx, bucketName)
 		if err == nil {
@@ -171,4 +172,43 @@ func (c *InfluxDBClient) ReadInsulinPoints(startTs, endTs int) ([]fetcher.Insuli
 		})
 	}
 	return insulin, nil
+}
+
+func (c *InfluxDBClient) WriteCarbPoint(carb fetcher.CarbPoint) error {
+	writeAPI := c.client.WriteAPIBlocking(Org, CarbBucket)
+	fields := map[string]any{
+		"value": carb.Value,
+	}
+	point := write.NewPoint("carb", map[string]string{}, fields, carb.Time)
+
+	err := writeAPI.WritePoint(context.Background(), point)
+	if err != nil {
+		return fmt.Errorf("unable to write carb point to InfluxDB: %w", err)
+	}
+	c.logger.Debug("wrote carb point", zap.Time("ts", point.Time()), zap.Any("fields", fields))
+	return nil
+}
+
+func (c *InfluxDBClient) ReadCarbPoints(startTs, endTs int) ([]fetcher.CarbPoint, error) {
+	queryAPI := c.client.QueryAPI(Org)
+	fluxQuery := fmt.Sprintf(`
+        data = from(bucket: "%s")
+            |> range(start: %d, stop: %d)
+            |> filter(fn: (r) => r["_field"] == "value")
+            |> yield()
+    `, CarbBucket, startTs, endTs)
+
+	result, err := queryAPI.Query(context.Background(), fluxQuery)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read carb points between %d and %d: %w", startTs, endTs, err)
+	}
+
+	carbs := make([]fetcher.CarbPoint, 0)
+	for result.Next() {
+		carbs = append(carbs, fetcher.CarbPoint{
+			Value: int(result.Record().Value().(int64)),
+			Time:  result.Record().Time(),
+		})
+	}
+	return carbs, nil
 }

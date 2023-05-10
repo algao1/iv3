@@ -17,9 +17,13 @@ import (
 
 type PointsReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
+
 	ReadInsulinPoints(startTs, endTs int) ([]fetcher.InsulinPoint, error)
 	WriteInsulinPoint(point fetcher.InsulinPoint) error
 	DeleteInsulinPoints(startTs, endTs int) error
+
+	ReadCarbPoints(startTs, endTs int) ([]fetcher.CarbPoint, error)
+	WriteCarbPoint(point fetcher.CarbPoint) error
 }
 
 type HttpServer struct {
@@ -48,11 +52,7 @@ func (s *HttpServer) RegisterInsulin(insulin []config.InsulinConfig) {
 
 func (s *HttpServer) Serve() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/glucose", s.basicAuth(s.getGlucoseHandler))
-	mux.HandleFunc("/insulin", s.basicAuth(s.getInsulinHandler))
-	mux.HandleFunc("/insulin/write", s.basicAuth(s.writeInsulinHandler))
-	mux.HandleFunc("/insulin/delete", s.basicAuth(s.deleteInsulinHandler))
-	mux.HandleFunc("/insulinTypes", s.basicAuth(s.getInsulinTypesHandler))
+	s.addHandlers(mux)
 
 	srv := &http.Server{
 		Addr:         ":443",
@@ -65,6 +65,18 @@ func (s *HttpServer) Serve() {
 	s.logger.Info("starting server", zap.String("addr", srv.Addr))
 	err := srv.ListenAndServeTLS("certfile.crt", "keyfile.key")
 	s.logger.Fatal("unable to listen and serve TLS", zap.Error(err))
+}
+
+func (s *HttpServer) addHandlers(mux *http.ServeMux) {
+	mux.HandleFunc("/glucose", s.basicAuth(s.getGlucoseHandler))
+
+	mux.HandleFunc("/insulin", s.basicAuth(s.getInsulinHandler))
+	mux.HandleFunc("/insulin/write", s.basicAuth(s.writeInsulinHandler))
+	mux.HandleFunc("/insulin/delete", s.basicAuth(s.deleteInsulinHandler))
+	mux.HandleFunc("/insulinTypes", s.basicAuth(s.getInsulinTypesHandler))
+
+	mux.HandleFunc("/carbs", s.basicAuth(s.getCarbsHandler))
+	mux.HandleFunc("/carbs/write", s.basicAuth(s.writeCarbHandler))
 }
 
 func (s *HttpServer) getGlucoseHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +113,7 @@ func (s *HttpServer) getInsulinHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(insulin)
 }
 
-type intermedInsulinPoint struct {
+type intermediateInsulinPoint struct {
 	Value int    `json:"value"`
 	Type  string `json:"type"`
 	Ts    int    `json:"ts"`
@@ -110,7 +122,7 @@ type intermedInsulinPoint struct {
 func (s *HttpServer) writeInsulinHandler(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("got POST request for /insulin/write", zap.Any("query", r.URL.Query()))
 
-	var intPoint intermedInsulinPoint
+	var intPoint intermediateInsulinPoint
 	err := json.NewDecoder(r.Body).Decode(&intPoint)
 	if err != nil {
 		fmt.Fprintln(w, "unable to decode insulin point: %w", err)
@@ -146,6 +158,49 @@ func (s *HttpServer) deleteInsulinHandler(w http.ResponseWriter, r *http.Request
 func (s *HttpServer) getInsulinTypesHandler(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("got GET request for /insulinTypes", zap.Any("query", r.URL.Query()))
 	json.NewEncoder(w).Encode(s.insulin)
+}
+
+func (s *HttpServer) getCarbsHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got GET request for /carbs", zap.Any("query", r.URL.Query()))
+
+	startTs, endTs, err := getStartEndTs(r.URL.Query())
+	if err != nil {
+		fmt.Fprintln(w, "unable to parse start/end timestamps: %w", err)
+		return
+	}
+
+	carbs, err := s.readWriter.ReadCarbPoints(startTs, endTs)
+	if err != nil {
+		fmt.Fprintln(w, "unable to fetch carbs: %w", err)
+		return
+	}
+	json.NewEncoder(w).Encode(carbs)
+}
+
+type intermediateCarbPoint struct {
+	Value int `json:"value"`
+	Ts    int `json:"ts"`
+}
+
+func (s *HttpServer) writeCarbHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got POST request for /carbs/write", zap.Any("query", r.URL.Query()))
+
+	var intPoint intermediateCarbPoint
+	err := json.NewDecoder(r.Body).Decode(&intPoint)
+	if err != nil {
+		fmt.Fprintln(w, "unable to decode carb point: %w", err)
+		return
+	}
+
+	point := fetcher.CarbPoint{
+		Value: intPoint.Value,
+		Time:  time.Unix(int64(intPoint.Ts), 0),
+	}
+	err = s.readWriter.WriteCarbPoint(point)
+	if err != nil {
+		fmt.Fprintln(w, "unable to write carb point: %w", err)
+		return
+	}
 }
 
 func getStartEndTs(values url.Values) (int, int, error) {
