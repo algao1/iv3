@@ -4,6 +4,7 @@ type Config struct {
 	Dexcom  DexcomConfig    `yaml:"dexcom"`
 	Insulin []InsulinConfig `yaml:"insulin"`
 	API     APIConfig       `yaml:"api"`
+	Spaces  SpacesConfig    `yaml:"spaces"`
 }
 
 type DexcomConfig struct {
@@ -14,6 +15,11 @@ type DexcomConfig struct {
 type APIConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+}
+
+type SpacesConfig struct {
+	Key    string `yaml:"key"`
+	Secret string `yaml:"secret"`
 }
 
 type InsulinConfig struct {

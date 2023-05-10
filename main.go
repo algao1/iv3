@@ -8,6 +8,7 @@ import (
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/server"
 	"github.com/algao1/iv3/store"
+	"github.com/algao1/iv3/tools/auto_backup"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -64,6 +65,25 @@ func main() {
 	)
 	if err != nil {
 		logger.Fatal("unable to create InfluxDB client", zap.Error(err))
+	}
+
+	backuper, err := auto_backup.NewS3Backuper(
+		influxdbToken,
+		influxdbUrl,
+		cfg.Spaces,
+		logger.Named("s3Backuper"),
+	)
+	if err != nil {
+		logger.Fatal("unable to create S3 backuper", zap.Error(err))
+	}
+
+	iv3Env := os.Getenv("IV3_ENV")
+	if iv3Env != "dev" {
+		logger.Info("starting S3 backuper")
+		err := backuper.Start()
+		if err != nil {
+			logger.Fatal("unable to start S3 backuper", zap.Error(err))
+		}
 	}
 
 	fetcher.NewDexcom(

@@ -12,13 +12,7 @@ tasks:
   all:
     desc: "Start all the containers"
     cmds:
-      - if [ "$IV3_ENV" == "dev" ]; then exit 1; fi
       - docker compose --env-file .env up -d
-
-  dev:
-    desc: "Start all the containers (-auto_backup) in dev mode"
-    cmds:
-      - docker compose --env-file .env -f docker-compose.dev.yaml up -d --remove-orphans
 
   go:
     cmds:

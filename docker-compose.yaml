@@ -8,22 +8,13 @@ services:
     environment:
       INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
       INFLUXDB_URL: "http://influxdb:8086"
+      IV3_ENV: ${IV3_ENV}
     container_name: iv3
+    restart: always
     depends_on:
       - influxdb
     ports:
       - "443:443"
-
-  auto_backup:
-    build:
-      context: .
-      dockerfile: tools/auto_backup/dockerfile
-    environment:
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_URL: "http://influxdb:8086"
-    container_name: auto_backup
-    depends_on:
-      - influxdb
 
   influxdb:
     image: "influxdb:2.7.0"
