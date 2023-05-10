@@ -35,8 +35,8 @@ func NewInfluxDB(token, url string, logger *zap.Logger) (*InfluxDBClient, error)
 		url:    url,
 	}
 
-	// Temporary, will set timeout someday...
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	_, err := client.client.Ping(ctx)
 	if err != nil {
@@ -60,11 +60,11 @@ func NewInfluxDB(token, url string, logger *zap.Logger) (*InfluxDBClient, error)
 
 	var bucketNames = []string{GlucoseBucket, InsulinBucket, EventsBucket}
 	for _, bucketName := range bucketNames {
-		_, err := bucketsAPI.FindBucketByName(context.Background(), bucketName)
+		_, err := bucketsAPI.FindBucketByName(ctx, bucketName)
 		if err == nil {
 			continue
 		}
-		_, err = bucketsAPI.CreateBucketWithName(context.Background(), &iv3Org, bucketName)
+		_, err = bucketsAPI.CreateBucketWithName(ctx, &iv3Org, bucketName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create bucket %s: %w", bucketName, err)
 		}
