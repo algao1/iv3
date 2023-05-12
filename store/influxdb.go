@@ -212,3 +212,15 @@ func (c *InfluxDBClient) ReadCarbPoints(startTs, endTs int) ([]fetcher.CarbPoint
 	}
 	return carbs, nil
 }
+
+func (c *InfluxDBClient) DeleteCarbPoints(startTs, endTs int) error {
+	deleteAPI := c.client.DeleteAPI()
+	return deleteAPI.DeleteWithName(
+		context.Background(),
+		Org,
+		CarbBucket,
+		time.Unix(int64(startTs), 0),
+		time.Unix(int64(endTs), 0),
+		"",
+	)
+}
