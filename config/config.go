@@ -5,6 +5,7 @@ type Config struct {
 	Insulin []InsulinConfig `yaml:"insulin"`
 	API     APIConfig       `yaml:"api"`
 	Spaces  SpacesConfig    `yaml:"spaces"`
+	Alert   AlertConfig     `yaml:"alert"`
 }
 
 type DexcomConfig struct {
@@ -27,4 +28,8 @@ type InsulinConfig struct {
 	Duration int     `yaml:"duration"`
 	Peak     float64 `yaml:"peak"`
 	Type     string  `yaml:"type"`
+}
+
+type AlertConfig struct {
+	Endpoint string `yaml:"endpoint"`
 }

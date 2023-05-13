@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/algao1/iv3/alert"
 	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/server"
@@ -92,6 +93,14 @@ func main() {
 		[]fetcher.GlucosePointsWriter{influxClient},
 		logger.Named("dexcom"),
 	)
+
+	if cfg.Alert.Endpoint != "" {
+		alert.NewAlerter(
+			influxClient,
+			cfg.Alert.Endpoint,
+			logger.Named("alerter"),
+		)
+	}
 
 	s := server.NewHttpServer(
 		cfg.API.Username,

@@ -1,8 +1,6 @@
-package fetcher
+package store
 
 import "time"
-
-// Anticipating these would be used in the future.
 
 type InsulinPoint struct {
 	Value int
@@ -13,4 +11,10 @@ type InsulinPoint struct {
 type CarbPoint struct {
 	Value int
 	Time  time.Time
+}
+
+type EventPoint struct {
+	Event   string
+	Message string
+	Time    time.Time
 }

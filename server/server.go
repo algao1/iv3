@@ -12,18 +12,19 @@ import (
 
 	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
+	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 )
 
 type PointsReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 
-	ReadInsulinPoints(startTs, endTs int) ([]fetcher.InsulinPoint, error)
-	WriteInsulinPoint(point fetcher.InsulinPoint) error
+	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
+	WriteInsulinPoint(point store.InsulinPoint) error
 	DeleteInsulinPoints(startTs, endTs int) error
 
-	ReadCarbPoints(startTs, endTs int) ([]fetcher.CarbPoint, error)
-	WriteCarbPoint(point fetcher.CarbPoint) error
+	ReadCarbPoints(startTs, endTs int) ([]store.CarbPoint, error)
+	WriteCarbPoint(point store.CarbPoint) error
 	DeleteCarbPoints(startTs, endTs int) error
 }
 
@@ -131,7 +132,7 @@ func (s *HttpServer) writeInsulinHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	point := fetcher.InsulinPoint{
+	point := store.InsulinPoint{
 		Value: intPoint.Value,
 		Type:  intPoint.Type,
 		Time:  time.Unix(int64(intPoint.Ts), 0),
@@ -195,7 +196,7 @@ func (s *HttpServer) writeCarbHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	point := fetcher.CarbPoint{
+	point := store.CarbPoint{
 		Value: intPoint.Value,
 		Time:  time.Unix(int64(intPoint.Ts), 0),
 	}
