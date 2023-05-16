@@ -32,7 +32,7 @@ Meant to be an all-in-one solution for monitoring and alerting glucose, with fur
 This time around, I want to:
 - Avoid having to write/support a Python graph rendering service
 - Avoid having to maintain Discord functionality
-- Redesign some architecture, hopefully making it easier to maintian
+- Redesign some architecture, hopefully making it easier to maintain
 
 So, I have decided to keep it more simple, and rely more heavily on third-party integrations for certain functionality.
 - Use Retool for realtime dashboards and input
@@ -44,7 +44,9 @@ So, I have decided to keep it more simple, and rely more heavily on third-party 
 For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
 
 ## Roadmap
-- More to come!
+- Missing insulin alerts
+- Missing carbs alerts
+- And more to come!
 
 ## Dependencies
 - [Task](https://taskfile.dev/)
@@ -60,6 +62,7 @@ Setup will also require a few other things, mostly left as a note to myself.
 - A config.yaml file for application-level settings
     - Dexcom, Spaces keys and secrets
     - Insulin types
+	- Alerting configs
 - A domain name, and an SSL certificate for HTTPS
     - This will be needed for authentication, and for Retool API integrations
     - `certfile.crt`, `keyfile.key`
