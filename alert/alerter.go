@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	PredLowGlucoseEvent  = "pred_low_glucose"
+	PredLowGlucoseWindow = 30 * time.Minute
+)
+
 type AlertingReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
@@ -41,12 +46,12 @@ func (a *Alerter) check() {
 	for {
 		select {
 		case <-ticker.C:
-			a.checkGlucose()
+			a.checkPredGlucose()
 		}
 	}
 }
 
-func (a *Alerter) checkGlucose() {
+func (a *Alerter) checkPredGlucose() {
 	windowStart, windowEnd := time.Now().Add(-30*time.Minute), time.Now()
 
 	points, err := a.rw.ReadGlucosePoints(int(windowStart.Unix()), int(windowEnd.Unix()))
@@ -64,7 +69,7 @@ func (a *Alerter) checkGlucose() {
 	predValue := lastPoints[2].Value + trend*4
 	a.logger.Debug("predicted glucose", zap.Float64("value", predValue))
 
-	if predValue < 5.5*18 && a.noEventsInPast("pred_low_glucose", 30*time.Minute) {
+	if predValue < 5.5*18 && a.noEventsInPast("pred_low_glucose", PredLowGlucoseWindow) {
 		alert := Alert{
 			Title:    "Incoming Low Glucose",
 			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", predValue/18),
@@ -72,7 +77,7 @@ func (a *Alerter) checkGlucose() {
 		}
 		a.publishAlert(alert)
 		a.rw.WriteEventPoint(store.EventPoint{
-			Event:   "pred_low_glucose",
+			Event:   PredLowGlucoseEvent,
 			Message: alert.Message,
 			Time:    time.Now(),
 		})
