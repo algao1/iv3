@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	PredLowGlucoseEvent = "pred_low_glucose"
-	// PredLowGlucoseWindow = 30 * time.Minute
+	PredLowGlucoseEvent  = "pred_low_glucose"
+	PredLowGlucoseWindow = 5 * time.Minute
 )
 
 type AlertingReadWriter interface {
@@ -76,7 +76,7 @@ func (a *Alerter) checkPredGlucose() {
 	predValue := lastPoints[2].Value + trend*4
 	a.logger.Debug("predicted glucose", zap.Float64("value", predValue))
 
-	if predValue < float64(a.lowThreshold) {
+	if predValue < float64(a.lowThreshold) && a.noEventsInPast(PredLowGlucoseEvent, PredLowGlucoseWindow) {
 		alert := Alert{
 			Title:    "Incoming Low Glucose",
 			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", predValue/18),
