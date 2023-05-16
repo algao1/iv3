@@ -14,7 +14,8 @@ Yet another T1D management solution.
 ## Quickstart
 To get started, run:
 ```
-task build && task all
+task build
+task all
 ```
 
 To perform a backup or restore, run:
@@ -22,6 +23,10 @@ To perform a backup or restore, run:
 task idb-backup
 task idb-restore
 ```
+
+## Overview
+This project is primarily meant for personal use, the steps required to set up iv3 are not as accessible as those for [Nightscout](https://nightscout.github.io/).
+Meant to be an all-in-one solution for monitoring and alerting glucose, with further customizability than the Dexcom app.
 
 ## What's Different?
 This time around, I want to:
@@ -39,13 +44,12 @@ So, I have decided to keep it more simple, and rely more heavily on third-party 
 For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
 
 ## Roadmap
-- Add alerting
-- Add warning/analysis on incoming lows
 - More to come!
 
 ## Dependencies
 - [Task](https://taskfile.dev/)
 - [Retool](https://retool.com/)
+- [ntfy](https://ntfy.sh/)
 - Docker
 
 ## Setup & Config
