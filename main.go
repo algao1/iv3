@@ -40,6 +40,13 @@ func verifyConfig(cfg config.Config, logger *zap.Logger) {
 	if cfg.API.Password == "" {
 		logger.Fatal("no API password provided")
 	}
+	if cfg.Alert.LowThreshold == 0 {
+		cfg.Alert.LowThreshold = 100
+		logger.Info(
+			"no low threshold provided, using default value",
+			zap.Int("lowThreshold", cfg.Alert.LowThreshold),
+		)
+	}
 }
 
 func main() {
@@ -97,7 +104,7 @@ func main() {
 	if cfg.Alert.Endpoint != "" {
 		alert.NewAlerter(
 			influxClient,
-			cfg.Alert.Endpoint,
+			cfg.Alert,
 			logger.Named("alerter"),
 		)
 	}

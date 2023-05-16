@@ -6,14 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 )
 
 const (
-	PredLowGlucoseEvent  = "pred_low_glucose"
-	PredLowGlucoseWindow = 30 * time.Minute
+	PredLowGlucoseEvent = "pred_low_glucose"
+	// PredLowGlucoseWindow = 30 * time.Minute
 )
 
 type AlertingReadWriter interface {
@@ -26,16 +27,21 @@ type AlertingReadWriter interface {
 }
 
 type Alerter struct {
-	rw       AlertingReadWriter
-	endpoint string
-	logger   *zap.Logger
+	rw AlertingReadWriter
+
+	// Configs.
+	endpoint     string
+	lowThreshold int
+
+	logger *zap.Logger
 }
 
-func NewAlerter(rw AlertingReadWriter, endpoint string, logger *zap.Logger) *Alerter {
+func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig, logger *zap.Logger) *Alerter {
 	a := &Alerter{
-		rw:       rw,
-		endpoint: endpoint,
-		logger:   logger,
+		rw:           rw,
+		endpoint:     cfg.Endpoint,
+		lowThreshold: cfg.LowThreshold,
+		logger:       logger,
 	}
 	go a.check()
 	return a
@@ -64,12 +70,13 @@ func (a *Alerter) checkPredGlucose() {
 		return
 	}
 
+	// Predict 20 minutes out using a simple trend.
 	lastPoints := points[len(points)-3:]
 	trend := (lastPoints[2].Value - lastPoints[0].Value) / 2
 	predValue := lastPoints[2].Value + trend*4
 	a.logger.Debug("predicted glucose", zap.Float64("value", predValue))
 
-	if predValue < 5.5*18 && a.noEventsInPast("pred_low_glucose", PredLowGlucoseWindow) {
+	if predValue < float64(a.lowThreshold) {
 		alert := Alert{
 			Title:    "Incoming Low Glucose",
 			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", predValue/18),
