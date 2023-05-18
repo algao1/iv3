@@ -31,6 +31,7 @@ type InsulinConfig struct {
 }
 
 type AlertConfig struct {
-	Endpoint     string `yaml:"endpoint"`
-	LowThreshold int    `yaml:"low_threshold"`
+	Endpoint             string `yaml:"endpoint"`
+	MissingLongThreshold int    `yaml:"missing_long_threshold"`
+	LowThreshold         int    `yaml:"low_threshold"`
 }

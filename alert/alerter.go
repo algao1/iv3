@@ -15,6 +15,9 @@ import (
 const (
 	PredLowGlucoseEvent  = "pred_low_glucose"
 	PredLowGlucoseWindow = 5 * time.Minute
+
+	MissingLongInsulinEvent  = "missing_long_insulin"
+	MissingLongInsulinWindow = 1 * time.Hour
 )
 
 type AlertingReadWriter interface {
@@ -30,29 +33,34 @@ type Alerter struct {
 	rw AlertingReadWriter
 
 	// Configs.
-	endpoint     string
-	lowThreshold int
+	endpoint             string
+	missingLongThreshold int // in hours.
+	lowThreshold         int // in minutes.
 
 	logger *zap.Logger
 }
 
 func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig, logger *zap.Logger) *Alerter {
 	a := &Alerter{
-		rw:           rw,
-		endpoint:     cfg.Endpoint,
-		lowThreshold: cfg.LowThreshold,
-		logger:       logger,
+		rw:                   rw,
+		endpoint:             cfg.Endpoint,
+		missingLongThreshold: cfg.MissingLongThreshold,
+		lowThreshold:         cfg.LowThreshold,
+		logger:               logger,
 	}
 	go a.check()
 	return a
 }
 
 func (a *Alerter) check() {
-	ticker := time.NewTicker(30 * time.Second)
+	predTicker := time.NewTicker(30 * time.Second)
+	missingLongTicker := time.NewTicker(5 * time.Minute)
 	for {
 		select {
-		case <-ticker.C:
+		case <-predTicker.C:
 			a.checkPredGlucose()
+		case <-missingLongTicker.C:
+			a.checkMissingLongInsulin()
 		}
 	}
 }
@@ -89,6 +97,39 @@ func (a *Alerter) checkPredGlucose() {
 			Time:    time.Now(),
 		})
 	}
+}
+
+func (a *Alerter) checkMissingLongInsulin() {
+	windowStart := time.Now().Add(-time.Duration(a.missingLongThreshold) * time.Hour)
+	windowEnd := time.Now()
+
+	points, err := a.rw.ReadInsulinPoints(int(windowStart.Unix()), int(windowEnd.Unix()))
+	if err != nil {
+		a.logger.Error("error reading insulin points", zap.Error(err))
+		return
+	}
+
+	for _, point := range points {
+		if point.Type == "long" {
+			return
+		}
+	}
+
+	if !a.noEventsInPast(MissingLongInsulinEvent, MissingLongInsulinWindow) {
+		return
+	}
+
+	alert := Alert{
+		Title:    "Missing Long Insulin",
+		Message:  fmt.Sprintf("No long insulin in the past %d hours", a.missingLongThreshold),
+		Priority: "high",
+	}
+	a.publishAlert(alert)
+	a.rw.WriteEventPoint(store.EventPoint{
+		Event:   MissingLongInsulinEvent,
+		Message: alert.Message,
+		Time:    time.Now(),
+	})
 }
 
 func (a *Alerter) noEventsInPast(event string, d time.Duration) bool {
