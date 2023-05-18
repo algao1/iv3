@@ -28,6 +28,8 @@ task idb-restore
 This project is primarily meant for personal use, the steps required to set up iv3 are not as accessible as those for [Nightscout](https://nightscout.github.io/).
 Meant to be an all-in-one solution for monitoring and alerting glucose, with further customizability than the Dexcom app.
 
+<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" width="200"/></a>
+
 ## What's Different?
 This time around, I want to:
 - Avoid having to write/support a Python graph rendering service
