@@ -110,7 +110,7 @@ func (a *Alerter) checkMissingLongInsulin() {
 	}
 
 	for _, point := range points {
-		if point.Type == "long" {
+		if point.Type == "Tresiba" {
 			return
 		}
 	}
