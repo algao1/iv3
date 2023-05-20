@@ -50,7 +50,7 @@ func NewS3Backuper(token, url string, cfg config.SpacesConfig,
 
 func (b *S3Backuper) Start() error {
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(1).Day().At("00:00").Do(func() {
+	_, err := s.Every(12).Hours().Do(func() {
 		err := b.backupAndUpload()
 		if err != nil {
 			b.logger.Error("unable to backup and upload to s3", zap.Error(err))
