@@ -33,6 +33,7 @@ type Alerter struct {
 	rw AlertingReadWriter
 
 	// Configs.
+	insPeriodType        map[string]string
 	endpoint             string
 	missingLongThreshold int // in hours.
 	lowThreshold         int // in minutes.
@@ -40,14 +41,20 @@ type Alerter struct {
 	logger *zap.Logger
 }
 
-func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig, logger *zap.Logger) *Alerter {
+func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig,
+	insCfg []config.InsulinConfig, logger *zap.Logger) *Alerter {
 	a := &Alerter{
 		rw:                   rw,
+		insPeriodType:        make(map[string]string),
 		endpoint:             cfg.Endpoint,
 		missingLongThreshold: cfg.MissingLongThreshold,
 		lowThreshold:         cfg.LowThreshold,
 		logger:               logger,
 	}
+	for _, ins := range insCfg {
+		a.insPeriodType[ins.Name] = ins.PeriodType
+	}
+
 	go a.check()
 	return a
 }
@@ -110,7 +117,7 @@ func (a *Alerter) checkMissingLongInsulin() {
 	}
 
 	for _, point := range points {
-		if point.Type == "Tresiba" {
+		if a.insPeriodType[point.Type] == "long" {
 			return
 		}
 	}

@@ -24,10 +24,10 @@ type SpacesConfig struct {
 }
 
 type InsulinConfig struct {
-	Name     string  `yaml:"name"`
-	Duration int     `yaml:"duration"`
-	Peak     float64 `yaml:"peak"`
-	Type     string  `yaml:"type"`
+	Name       string  `yaml:"name"`
+	Duration   int     `yaml:"duration"`
+	Peak       float64 `yaml:"peak"`
+	PeriodType string  `yaml:"period_type"`
 }
 
 type AlertConfig struct {

@@ -105,6 +105,7 @@ func main() {
 		alert.NewAlerter(
 			influxClient,
 			cfg.Alert,
+			cfg.Insulin,
 			logger.Named("alerter"),
 		)
 	}
