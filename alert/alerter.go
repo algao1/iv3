@@ -56,6 +56,11 @@ func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig,
 		a.insPeriodType[ins.Name] = ins.PeriodType
 	}
 
+	logger.Info("started Alerter",
+		zap.Duration("missingLongThreshold", a.missingLongThreshold),
+		zap.Int("lowThreshold", a.lowThreshold),
+	)
+
 	go a.check()
 	return a
 }
@@ -129,7 +134,7 @@ func (a *Alerter) checkMissingLongInsulin() {
 
 	alert := Alert{
 		Title:    "Missing Long Insulin",
-		Message:  fmt.Sprintf("No long insulin in the past %d hours", a.missingLongThreshold),
+		Message:  fmt.Sprintf("No long insulin in the past %s hours", a.missingLongThreshold),
 		Priority: "high",
 	}
 	a.publishAlert(alert)
