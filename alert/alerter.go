@@ -33,10 +33,11 @@ type Alerter struct {
 	rw AlertingReadWriter
 
 	// Configs.
-	insPeriodType        map[string]string
-	endpoint             string
-	missingLongThreshold int // in hours.
-	lowThreshold         int // in minutes.
+	insPeriodType map[string]string
+	endpoint      string
+
+	missingLongThreshold time.Duration
+	lowThreshold         int
 
 	logger *zap.Logger
 }
@@ -47,7 +48,7 @@ func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig,
 		rw:                   rw,
 		insPeriodType:        make(map[string]string),
 		endpoint:             cfg.Endpoint,
-		missingLongThreshold: cfg.MissingLongThreshold,
+		missingLongThreshold: time.Duration(cfg.MissingLongThreshold) * time.Hour,
 		lowThreshold:         cfg.LowThreshold,
 		logger:               logger,
 	}
@@ -107,7 +108,7 @@ func (a *Alerter) checkPredGlucose() {
 }
 
 func (a *Alerter) checkMissingLongInsulin() {
-	windowStart := time.Now().Add(-time.Duration(a.missingLongThreshold) * time.Hour)
+	windowStart := time.Now().Add(-a.missingLongThreshold)
 	windowEnd := time.Now()
 
 	points, err := a.rw.ReadInsulinPoints(int(windowStart.Unix()), int(windowEnd.Unix()))
