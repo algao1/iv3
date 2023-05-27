@@ -107,12 +107,12 @@ func (b *S3Backuper) backupAndUpload() error {
 	// Maybe delete the file after uploading?
 	err = os.RemoveAll(backUpFilePath)
 	if err != nil {
-		return fmt.Errorf("unable to clean up backup file: %w", err)
+		b.logger.Warn("unable to clean up backup file", zap.Error(err))
 	}
 
 	err = os.Remove(tarFilePath)
 	if err != nil {
-		return fmt.Errorf("unable to clean up tar file: %w", err)
+		b.logger.Warn("unable to clean up tar file", zap.Error(err))
 	}
 
 	return nil
