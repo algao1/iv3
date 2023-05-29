@@ -46,8 +46,13 @@ So, I have decided to keep it more simple, and rely more heavily on third-party 
 For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
 
 ## Roadmap
-- Missing insulin alerts
-- Missing carbs alerts
+- Better analysis on day-to-day patterns
+	- Aggregate into buckets, average over all days
+	- Display on web app
+	- Prompt ChatGPT for advice?
+- Sustained high glucose alerts
+- Better low glucose detection
+	- Factors in previous carbs and insulin values
 - And more to come!
 
 ## Dependencies

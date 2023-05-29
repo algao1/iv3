@@ -90,7 +90,7 @@ func (b *S3Backuper) backupAndUpload() error {
 
 	file, err := os.Open(tarFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to open tar file: %w", err)
 	}
 
 	awsFilePath := "auto_backup/archive_" + dateStr + ".tar.gz"
@@ -110,7 +110,7 @@ func (b *S3Backuper) backupAndUpload() error {
 		b.logger.Warn("unable to clean up backup file", zap.Error(err))
 	}
 
-	err = os.Remove(tarFilePath)
+	err = os.RemoveAll(tarFilePath)
 	if err != nil {
 		b.logger.Warn("unable to clean up tar file", zap.Error(err))
 	}
