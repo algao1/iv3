@@ -61,7 +61,7 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 - Docker
 
 ## Setup & Config
-Setup will also require a few other things, mostly left as a note to myself.
+Setup will also require a few other things, mostly left as a note to myself. See `example-config.yaml` for more details.
 - A .env file for things that have to be used by Task or docker compose
     - `INFLUXDB_TOKEN=...` to access InfluxDB
     - `IV3_ENV=dev` for dev environment

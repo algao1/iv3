@@ -1,0 +1,23 @@
+dexcom:
+  account: ...
+  password: ...
+api:
+  username: ...
+  password: ...
+spaces:
+  key: ...
+  secret: ...
+insulin:
+  - name: "Humalog"
+    duration: 4
+    peak: 1.5
+    period_type: "rapid"
+  - name: "Tresiba"
+    duration: 42
+    peak: 0
+    period_type: "long"
+iv3:
+  endpoint: ... # for ntfy.
+  missing_long_threshold: 24 # hours
+  high_threshold: 180
+  low_threshold: 100
