@@ -49,8 +49,13 @@ func NewS3Backuper(token, url string, cfg config.SpacesConfig,
 }
 
 func (b *S3Backuper) Start() error {
+	err := os.MkdirAll(".data/auto_backup", 0755)
+	if err != nil {
+		return fmt.Errorf("unable to create backup directory: %w", err)
+	}
+
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(12).Hours().Do(func() {
+	_, err = s.Every(12).Hours().Do(func() {
 		err := b.backupAndUpload()
 		if err != nil {
 			b.logger.Error("unable to backup and upload to s3", zap.Error(err))
@@ -69,10 +74,10 @@ func (b *S3Backuper) Start() error {
 func (b *S3Backuper) backupAndUpload() error {
 	dateStr := time.Now().Format(time.RFC3339)
 
-	backUpFilePath := ".data/auto_backup/" + dateStr
+	backupPath := ".data/auto_backup/" + dateStr
 	backupCmd := exec.Command(
 		"influx",
-		"backup", backUpFilePath,
+		"backup", backupPath,
 		"-t", b.token,
 		"--host", b.url,
 	)
@@ -82,7 +87,7 @@ func (b *S3Backuper) backupAndUpload() error {
 	}
 
 	tarFilePath := ".data/auto_backup/archive_" + dateStr + ".tar.gz"
-	compressCmd := exec.Command("tar", "-zcvf", tarFilePath, backUpFilePath)
+	compressCmd := exec.Command("tar", "-zcvf", tarFilePath, backupPath)
 	out, err = compressCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("compress cmd failed with %s: %w", out, err)
@@ -105,12 +110,12 @@ func (b *S3Backuper) backupAndUpload() error {
 	}
 
 	// Maybe delete the file after uploading?
-	err = os.RemoveAll(backUpFilePath)
+	err = os.RemoveAll(backupPath)
 	if err != nil {
 		b.logger.Warn("unable to clean up backup file", zap.Error(err))
 	}
 
-	err = os.RemoveAll(tarFilePath)
+	err = os.Remove(tarFilePath)
 	if err != nil {
 		b.logger.Warn("unable to clean up tar file", zap.Error(err))
 	}
