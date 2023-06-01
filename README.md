@@ -47,8 +47,6 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 
 ## Roadmap
 - Better analysis on day-to-day patterns
-	- Aggregate into buckets, average over all days
-	- Display on web app
 	- Prompt ChatGPT for advice?
 - Sustained high glucose alerts
 - Better low glucose detection

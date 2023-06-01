@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/algao1/iv3/analysis"
 	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/store"
@@ -28,22 +29,28 @@ type PointsReadWriter interface {
 	DeleteCarbPoints(startTs, endTs int) error
 }
 
+type Analyzer interface {
+	DayToDay(startTs, endTs int) (*analysis.DayToDayResult, error)
+}
+
 type HttpServer struct {
 	username string
 	password string
 
 	readWriter PointsReadWriter
+	analyzer   Analyzer
 	insulin    []config.InsulinConfig
 
 	logger *zap.Logger
 }
 
 func NewHttpServer(username, password string,
-	readWriter PointsReadWriter, logger *zap.Logger) *HttpServer {
+	readWriter PointsReadWriter, analyzer Analyzer, logger *zap.Logger) *HttpServer {
 	return &HttpServer{
 		username:   username,
 		password:   password,
 		readWriter: readWriter,
+		analyzer:   analyzer,
 		logger:     logger,
 	}
 }
@@ -80,6 +87,8 @@ func (s *HttpServer) addHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/carbs", s.basicAuth(s.getCarbsHandler))
 	mux.HandleFunc("/carbs/write", s.basicAuth(s.writeCarbHandler))
 	mux.HandleFunc("/carbs/delete", s.basicAuth(s.deleteCarbsHandler))
+
+	mux.HandleFunc("/dtd", s.basicAuth(s.getDayToDayHandler))
 }
 
 func (s *HttpServer) getGlucoseHandler(w http.ResponseWriter, r *http.Request) {
@@ -220,6 +229,22 @@ func (s *HttpServer) deleteCarbsHandler(w http.ResponseWriter, r *http.Request) 
 		fmt.Fprintln(w, "unable to delete carb points: %w", err)
 		return
 	}
+}
+
+func (s *HttpServer) getDayToDayHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got GET request for /dtd", zap.Any("query", r.URL.Query()))
+	startTs, endTs, err := getStartEndTs(r.URL.Query())
+	if err != nil {
+		fmt.Fprintln(w, "unable to parse start/end timestamps: %w", err)
+		return
+	}
+
+	result, err := s.analyzer.DayToDay(startTs, endTs)
+	if err != nil {
+		fmt.Fprintln(w, "unable to get day-to-day analysis: %w", err)
+		return
+	}
+	json.NewEncoder(w).Encode(result)
 }
 
 func getStartEndTs(values url.Values) (int, int, error) {

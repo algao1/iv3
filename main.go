@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/algao1/iv3/alert"
+	"github.com/algao1/iv3/analysis"
 	"github.com/algao1/iv3/config"
 	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/server"
@@ -110,10 +111,17 @@ func main() {
 		)
 	}
 
+	analyzer := analysis.NewAnalyzer(
+		influxClient,
+		cfg.Alert,
+		logger.Named("analyzer"),
+	)
+
 	s := server.NewHttpServer(
 		cfg.API.Username,
 		cfg.API.Password,
 		influxClient,
+		analyzer,
 		logger.Named("httpServer"),
 	)
 	s.RegisterInsulin(cfg.Insulin)
