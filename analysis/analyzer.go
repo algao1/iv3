@@ -57,7 +57,7 @@ func (a *Analyzer) DayToDay(startTs, endTs int) (*DayToDayResult, error) {
 
 		if int(point.Value) >= a.lowThreshold &&
 			int(point.Value) <= a.highThreshold {
-			inRange++
+			inRange += 1
 		}
 
 		glucoseValues[i] = point.Value
