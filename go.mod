@@ -5,12 +5,12 @@ go 1.20
 require (
 	github.com/aws/aws-sdk-go v1.44.258
 	github.com/go-co-op/gocron v1.25.0
+	github.com/montanaflynn/stats v0.7.1
 	go.uber.org/zap v1.24.0
 )
 
 require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 )
 
