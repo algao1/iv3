@@ -25,10 +25,12 @@ task idb-restore
 ```
 
 ## Overview
-This project is primarily meant for personal use, the steps required to set up iv3 are not as accessible as those for [Nightscout](https://nightscout.github.io/).
-Meant to be an all-in-one solution for monitoring and alerting glucose, with further customizability than the Dexcom app.
+This project is primarily meant for personal use, the steps required to set up **iv3** are not as accessible as those for [Nightscout](https://nightscout.github.io/).
 
-<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" width="200"/></a>
+Primarily meant to be used in conjunction with a Retool dashboard, as shown below.
+
+<a href=".media/iv3_desktop_retool.png"><img src=".media/iv3_desktop_retool.png" height="250"/></a>
+<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" height="250"/></a>
 
 ## What's Different?
 This time around, I want to:
@@ -47,7 +49,6 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 
 ## Roadmap
 - Better analysis on day-to-day patterns
-	- Prompt ChatGPT for advice?
 - Sustained high glucose alerts
 - Better low glucose detection
 	- Factors in previous carbs and insulin values
@@ -62,7 +63,7 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 ## Setup & Config
 Setup will also require a few other things, mostly left as a note to myself.
 - A .env file for things that have to be used by Task or docker compose
-    - `INFLUXDB_TOKEN`
+    - `INFLUXDB_TOKEN=...` to access InfluxDB
     - `IV3_ENV=dev` for dev environment
 - A config.yaml file for application-level settings
     - Dexcom, Spaces keys and secrets
