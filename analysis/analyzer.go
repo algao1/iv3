@@ -25,7 +25,7 @@ type Analyzer struct {
 	logger        *zap.Logger
 }
 
-func NewAnalyzer(reader PointsReader, cfg config.AlertConfig, logger *zap.Logger) *Analyzer {
+func NewAnalyzer(reader PointsReader, cfg config.Iv3Config, logger *zap.Logger) *Analyzer {
 	return &Analyzer{
 		reader:        reader,
 		lowThreshold:  cfg.LowThreshold,

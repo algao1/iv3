@@ -42,7 +42,7 @@ type Alerter struct {
 	logger *zap.Logger
 }
 
-func NewAlerter(rw AlertingReadWriter, cfg config.AlertConfig,
+func NewAlerter(rw AlertingReadWriter, cfg config.Iv3Config,
 	insCfg []config.InsulinConfig, logger *zap.Logger) *Alerter {
 	a := &Alerter{
 		rw:                   rw,

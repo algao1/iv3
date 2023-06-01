@@ -5,7 +5,7 @@ type Config struct {
 	Insulin []InsulinConfig `yaml:"insulin"`
 	API     APIConfig       `yaml:"api"`
 	Spaces  SpacesConfig    `yaml:"spaces"`
-	Alert   AlertConfig     `yaml:"alert"`
+	Iv3     Iv3Config       `yaml:"iv3"`
 }
 
 type DexcomConfig struct {
@@ -30,7 +30,7 @@ type InsulinConfig struct {
 	PeriodType string  `yaml:"period_type"`
 }
 
-type AlertConfig struct {
+type Iv3Config struct {
 	Endpoint             string `yaml:"endpoint"`
 	MissingLongThreshold int    `yaml:"missing_long_threshold"`
 	HighThreshold        int    `yaml:"high_threshold"`

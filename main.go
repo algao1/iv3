@@ -41,11 +41,11 @@ func verifyConfig(cfg config.Config, logger *zap.Logger) {
 	if cfg.API.Password == "" {
 		logger.Fatal("no API password provided")
 	}
-	if cfg.Alert.LowThreshold == 0 {
-		cfg.Alert.LowThreshold = 100
+	if cfg.Iv3.LowThreshold == 0 {
+		cfg.Iv3.LowThreshold = 100
 		logger.Info(
 			"no low threshold provided, using default value",
-			zap.Int("lowThreshold", cfg.Alert.LowThreshold),
+			zap.Int("lowThreshold", cfg.Iv3.LowThreshold),
 		)
 	}
 }
@@ -102,10 +102,10 @@ func main() {
 		logger.Named("dexcom"),
 	)
 
-	if cfg.Alert.Endpoint != "" {
+	if cfg.Iv3.Endpoint != "" {
 		alert.NewAlerter(
 			influxClient,
-			cfg.Alert,
+			cfg.Iv3,
 			cfg.Insulin,
 			logger.Named("alerter"),
 		)
@@ -113,7 +113,7 @@ func main() {
 
 	analyzer := analysis.NewAnalyzer(
 		influxClient,
-		cfg.Alert,
+		cfg.Iv3,
 		logger.Named("analyzer"),
 	)
 
