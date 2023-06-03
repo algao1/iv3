@@ -108,6 +108,7 @@ func (b *S3Backuper) backupAndUpload() error {
 	if err != nil {
 		return err
 	}
+	file.Close()
 
 	// Maybe delete the file after uploading?
 	err = os.RemoveAll(backupPath)

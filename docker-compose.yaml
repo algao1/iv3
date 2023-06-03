@@ -10,7 +10,7 @@ services:
       INFLUXDB_URL: "http://influxdb:8086"
       IV3_ENV: ${IV3_ENV}
     container_name: iv3
-    restart: always
+    # restart: always
     depends_on:
       - influxdb
     ports:
