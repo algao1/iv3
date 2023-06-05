@@ -206,11 +206,24 @@ func (c *InfluxDBClient) ReadEventPoints(startTs, endTs int) ([]EventPoint, erro
 
 	events := make([]EventPoint, 0)
 	for result.Next() {
-		events = append(events, EventPoint{
-			Event:   result.Record().ValueByKey("event").(string),
-			Message: result.Record().ValueByKey("message").(string),
-			Time:    result.Record().Time(),
-		})
+		e := EventPoint{
+			Time: result.Record().Time(),
+		}
+		v := result.Record().Values()
+
+		if _, ok := v["event"]; ok {
+			e.Event = v["event"].(string)
+		} else {
+			c.logger.Warn("event point missing event field", zap.Any("values", v))
+		}
+
+		if _, ok := v["message"]; ok {
+			e.Message = v["message"].(string)
+		} else {
+			c.logger.Warn("event point missing message field", zap.Any("values", v))
+		}
+
+		events = append(events, e)
 	}
 	return events, nil
 }
