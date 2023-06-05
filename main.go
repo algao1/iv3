@@ -51,9 +51,8 @@ func verifyConfig(cfg config.Config, logger *zap.Logger) {
 }
 
 func main() {
-	// Probably will use a mix of flags and config files.
-	// Though this might get overwhelming/confusing, for now it should be ok.
-	logger, _ := zap.NewDevelopment()
+	// TODO: should switch between prod and dev mode with flag.
+	logger, _ := zap.NewProduction()
 	verifyFlags(logger)
 
 	file, err := os.ReadFile(configFile)
