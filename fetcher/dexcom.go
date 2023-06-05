@@ -68,7 +68,10 @@ func (c *DexcomClient) writePeriodic() {
 			}
 		}
 
-		dur := time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
+		dur := 5 * time.Minute
+		if len(glucose) > 0 {
+			dur = time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
+		}
 		time.Sleep(dur)
 	}
 }
