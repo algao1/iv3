@@ -104,11 +104,15 @@ func (a *Alerter) checkPredGlucose() {
 			Priority: "high",
 		}
 		a.publishAlert(alert)
-		a.rw.WriteEventPoint(store.EventPoint{
+
+		err = a.rw.WriteEventPoint(store.EventPoint{
 			Event:   PredLowGlucoseEvent,
 			Message: alert.Message,
 			Time:    time.Now(),
 		})
+		if err != nil {
+			a.logger.Error("error writing event point", zap.Error(err))
+		}
 	}
 }
 
@@ -138,11 +142,15 @@ func (a *Alerter) checkMissingLongInsulin() {
 		Priority: "high",
 	}
 	a.publishAlert(alert)
-	a.rw.WriteEventPoint(store.EventPoint{
+
+	err = a.rw.WriteEventPoint(store.EventPoint{
 		Event:   MissingLongInsulinEvent,
 		Message: alert.Message,
 		Time:    time.Now(),
 	})
+	if err != nil {
+		a.logger.Error("error writing event point", zap.Error(err))
+	}
 }
 
 func (a *Alerter) noEventsInPast(event string, d time.Duration) bool {

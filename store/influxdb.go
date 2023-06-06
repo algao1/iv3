@@ -203,19 +203,27 @@ func (c *InfluxDBClient) ReadEventPoints(startTs, endTs int) ([]EventPoint, erro
 		return nil, fmt.Errorf("unable to read event points between %d and %d: %w", startTs, endTs, err)
 	}
 
-	events := make([]EventPoint, 0)
+	// We need to make a map, because each field gets a record.
+	events := make(map[time.Time]*EventPoint)
 	for result.Next() {
-		e := EventPoint{
-			Time: result.Record().Time(),
+		ts := result.Record().Time()
+		if _, ok := events[ts]; !ok {
+			events[ts] = &EventPoint{Time: ts}
 		}
-		if result.Record().ValueByKey("message") != nil {
-			e.Message = result.Record().ValueByKey("message").(string)
+
+		if result.Record().Field() == "event" {
+			events[ts].Event = result.Record().Value().(string)
 		}
-		if result.Record().ValueByKey("event") != nil {
-			e.Event = result.Record().ValueByKey("event").(string)
+		if result.Record().Field() == "message" {
+			events[ts].Message = result.Record().Value().(string)
 		}
 	}
-	return events, nil
+
+	eventsSlice := make([]EventPoint, 0)
+	for _, event := range events {
+		eventsSlice = append(eventsSlice, *event)
+	}
+	return eventsSlice, nil
 }
 
 func (c *InfluxDBClient) WriteCarbPoint(carb CarbPoint) error {
