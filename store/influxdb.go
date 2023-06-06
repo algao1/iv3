@@ -195,7 +195,6 @@ func (c *InfluxDBClient) ReadEventPoints(startTs, endTs int) ([]EventPoint, erro
 	fluxQuery := fmt.Sprintf(`
         data = from(bucket: "%s")
             |> range(start: %d, stop: %d)
-            |> filter(fn: (r) => r["_field"] == "event")
             |> yield()
     `, EventsBucket, startTs, endTs)
 
@@ -209,21 +208,12 @@ func (c *InfluxDBClient) ReadEventPoints(startTs, endTs int) ([]EventPoint, erro
 		e := EventPoint{
 			Time: result.Record().Time(),
 		}
-		v := result.Record().Values()
-
-		if _, ok := v["event"]; ok {
-			e.Event = v["event"].(string)
-		} else {
-			c.logger.Warn("event point missing event field", zap.Any("values", v))
+		if result.Record().ValueByKey("message") != nil {
+			e.Message = result.Record().ValueByKey("message").(string)
 		}
-
-		if _, ok := v["message"]; ok {
-			e.Message = v["message"].(string)
-		} else {
-			c.logger.Warn("event point missing message field", zap.Any("values", v))
+		if result.Record().ValueByKey("event") != nil {
+			e.Event = result.Record().ValueByKey("event").(string)
 		}
-
-		events = append(events, e)
 	}
 	return events, nil
 }
