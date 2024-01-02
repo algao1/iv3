@@ -21,8 +21,7 @@ RUN tar xvzf ./influxdb2-client-2.7.1-linux-amd64.tar.gz
 RUN cp influx /usr/local/bin/
 
 COPY --from=service_builder /go/iv3/iv3 .
-COPY --from=service_builder /go/iv3/config.yaml .
 COPY --from=service_builder /go/iv3/certfile.crt .
 COPY --from=service_builder /go/iv3/keyfile.key .
 
-CMD ./iv3 -influxdbToken ${INFLUXDB_TOKEN} -influxdbUrl ${INFLUXDB_URL}
+CMD ./iv3 -iv3Env ${IV3_ENV} -influxdbToken ${INFLUXDB_TOKEN} -influxdbUrl ${INFLUXDB_URL}

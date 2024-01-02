@@ -2,6 +2,6 @@
 exp*
 
 # Hide data.
-.data
+._iv3
 .media
 .github

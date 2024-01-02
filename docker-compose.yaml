@@ -11,6 +11,10 @@ services:
       IV3_ENV: ${IV3_ENV}
     container_name: iv3
     # restart: always
+    volumes:
+      - type: bind
+        source: config.yaml
+        target: /go/iv3/config.yaml
     depends_on:
       - influxdb
     ports:
@@ -21,7 +25,10 @@ services:
     container_name: influxdb
     volumes:
       - type: bind
-        source: .data/influxdb2
+        source: _iv3_data/influxdb2
         target: /var/lib/influxdb2
+      - type: bind
+        source: _iv3_config/influxdb2
+        target: /etc/influxdb2
     ports:
       - "8086:8086"

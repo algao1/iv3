@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	"github.com/algao1/iv3/alert"
@@ -12,18 +11,19 @@ import (
 	"github.com/algao1/iv3/server"
 	"github.com/algao1/iv3/store"
 	"github.com/algao1/iv3/tools/auto_backup"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
 var (
+	iv3Env        string
 	configFile    string
 	influxdbToken string
 	influxdbUrl   string
 )
 
 func init() {
+	flag.StringVar(&iv3Env, "iv3Env", "dev", "iv3 env var")
 	flag.StringVar(&configFile, "config", "config.yaml", "config file")
 	flag.StringVar(&influxdbToken, "influxdbToken", "", "InfluxDB token")
 	flag.StringVar(&influxdbUrl, "influxdbUrl", "http://localhost:8086", "InfluxDB url")
@@ -37,12 +37,6 @@ func verifyFlags(logger *zap.Logger) {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	iv3Env := os.Getenv("IV3_ENV")
-
 	logger, _ := zap.NewProduction()
 	if iv3Env == "dev" {
 		logger, _ = zap.NewDevelopment()
