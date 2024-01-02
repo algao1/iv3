@@ -42,6 +42,8 @@ To develop locally, run:
 task go
 ```
 
+See `Taskfile.yaml` for more specifics.
+
 ## Development and Deployment
 This project is primarily meant for personal use, so the steps outlined here are left mostly as a note to myself. The structure and layout is very opinionated and tailored to my usecases.
 
@@ -53,16 +55,20 @@ Setup will also require a few other things:
     - `IV3_ENV=dev` for dev environment
 - A `config.yaml` file for application-level settings
     - Dexcom, DigitalOcean Spaces keys and secrets
-    - Insulin configs
-	- Alerting configs
+    - Insulin and alerting configs
 - A domain name, and SSL certificate for HTTPS (needed for Retool)
     - This will be needed for authentication, and for Retool API integrations
     - `certfile.crt`, `keyfile.key`
+	- **Note:** At this moment, these files need to be located inside `_iv3_ssl` since it is mounted onto iv3, and will not work otherwise
 
 ### InfluxDB
 The configuration and data for InfluxDB are mounted on `_iv3_config` and `_iv3_data` respectively, remember to create those! Additionally, when starting the InfluxDB instance for the first time, we need to register and create an API token, see [**here**](https://hub.docker.com/_/influxdb) for details.
 
 Once that is done, remember to add it to the `config.yaml` file.
+
+### ntfy
+
+TBD.
 
 ## What's Different?
 This time around, I want to:
@@ -88,6 +94,6 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 
 ## Dependencies
 - [Task](https://taskfile.dev/)
+- [InfluxDB](https://www.influxdata.com/)
 - [Retool](https://retool.com/)
 - [ntfy](https://ntfy.sh/)
-- Docker

@@ -17,6 +17,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// TODO: Should make this less jank...
+	certFile = "_iv3_ssl/certfile.crt"
+	keyfile  = "_iv3_ssl/keyfile.key"
+)
+
 type PointsReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 
@@ -72,7 +78,7 @@ func (s *HttpServer) Serve() {
 	}
 
 	s.logger.Info("starting server", zap.String("addr", srv.Addr))
-	err := srv.ListenAndServeTLS("certfile.crt", "keyfile.key")
+	err := srv.ListenAndServeTLS(certFile, keyfile)
 	s.logger.Fatal("unable to listen and serve TLS", zap.Error(err))
 }
 

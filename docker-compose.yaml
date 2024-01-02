@@ -15,6 +15,9 @@ services:
       - type: bind
         source: config.yaml
         target: /go/iv3/config.yaml
+      - type: bind
+        source: _iv3_ssl/
+        target: /go/iv3/_iv3_ssl
     depends_on:
       - influxdb
     ports:
