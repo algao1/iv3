@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 
 	"github.com/algao1/iv3/alert"
@@ -11,6 +12,7 @@ import (
 	"github.com/algao1/iv3/server"
 	"github.com/algao1/iv3/store"
 	"github.com/algao1/iv3/tools/auto_backup"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -34,25 +36,17 @@ func verifyFlags(logger *zap.Logger) {
 	}
 }
 
-func verifyConfig(cfg config.Config, logger *zap.Logger) {
-	if cfg.API.Username == "" {
-		logger.Fatal("no API username provided")
-	}
-	if cfg.API.Password == "" {
-		logger.Fatal("no API password provided")
-	}
-	if cfg.Iv3.LowThreshold == 0 {
-		cfg.Iv3.LowThreshold = 100
-		logger.Info(
-			"no low threshold provided, using default value",
-			zap.Int("lowThreshold", cfg.Iv3.LowThreshold),
-		)
-	}
-}
-
 func main() {
-	// TODO: should switch between prod and dev mode with flag.
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	iv3Env := os.Getenv("IV3_ENV")
+
 	logger, _ := zap.NewProduction()
+	if iv3Env == "dev" {
+		logger, _ = zap.NewDevelopment()
+	}
 	verifyFlags(logger)
 
 	file, err := os.ReadFile(configFile)
@@ -64,7 +58,9 @@ func main() {
 	if err = yaml.Unmarshal(file, &cfg); err != nil {
 		logger.Fatal("unable to unmarshal config file", zap.Error(err))
 	}
-	verifyConfig(cfg, logger)
+	if err := cfg.Verify(); err != nil {
+		logger.Fatal("incorrect config provided", zap.Error(err))
+	}
 
 	influxClient, err := store.NewInfluxDB(
 		influxdbToken,
@@ -85,7 +81,6 @@ func main() {
 		logger.Fatal("unable to create S3 backuper", zap.Error(err))
 	}
 
-	iv3Env := os.Getenv("IV3_ENV")
 	if iv3Env != "dev" {
 		logger.Info("starting S3 backuper")
 		err := backuper.Start()

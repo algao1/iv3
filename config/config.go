@@ -1,5 +1,9 @@
 package config
 
+import (
+	"fmt"
+)
+
 type Config struct {
 	Dexcom  DexcomConfig    `yaml:"dexcom"`
 	Insulin []InsulinConfig `yaml:"insulin"`
@@ -35,4 +39,17 @@ type Iv3Config struct {
 	MissingLongThreshold int    `yaml:"missing_long_threshold"`
 	HighThreshold        int    `yaml:"high_threshold"`
 	LowThreshold         int    `yaml:"low_threshold"`
+}
+
+func (cfg *Config) Verify() error {
+	if cfg.API.Username == "" {
+		return fmt.Errorf("no API username provided")
+	}
+	if cfg.API.Password == "" {
+		return fmt.Errorf("no API password provided")
+	}
+	if cfg.Iv3.LowThreshold == 0 {
+		cfg.Iv3.LowThreshold = 100
+	}
+	return nil
 }

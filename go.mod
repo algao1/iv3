@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/aws/aws-sdk-go v1.44.258
 	github.com/go-co-op/gocron v1.25.0
+	github.com/joho/godotenv v1.5.1
 	github.com/montanaflynn/stats v0.7.1
 	go.uber.org/zap v1.24.0
 )

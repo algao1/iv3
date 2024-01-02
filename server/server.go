@@ -64,7 +64,7 @@ func (s *HttpServer) Serve() {
 	s.addHandlers(mux)
 
 	srv := &http.Server{
-		Addr:         ":443",
+		Addr:         ":8443",
 		Handler:      mux,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
