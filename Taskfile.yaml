@@ -14,6 +14,11 @@ tasks:
     cmds:
       - docker compose --env-file .env up -d
 
+  down:
+    desc: "Tear down iv3"
+    cmds:
+      - docker compose down
+
   go:
     cmds:
       - go run *.go -influxdbToken $INFLUXDB_TOKEN

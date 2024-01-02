@@ -9,3 +9,7 @@ config.yaml
 # Misc.
 *.crt
 *.key
+*.pem
+*.pfx
+# For docker-compose tarballs.
+*.tar
