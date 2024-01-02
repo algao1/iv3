@@ -11,6 +11,19 @@ Yet another T1D management solution.
 
 </div>
 
+## ToC
+- [Overview](#overview)
+- [Quickstart](#quickstart)
+- [Development and Deployment](#development-and-deployment)
+
+## Overview
+This project is primarily meant to be used in conjunction with a Retool dashboard, as shown below.
+
+<div style="text-align: center;">
+	<a href=".media/iv3_desktop_retool.png"><img src=".media/iv3_desktop_retool.png" height="250"/></a>
+	<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" height="250"/></a>
+</div>
+
 ## Quickstart
 To get started, run:
 ```
@@ -24,13 +37,32 @@ task idb-backup
 task idb-restore
 ```
 
-## Overview
-This project is primarily meant for personal use, the steps required to set up **iv3** are not as accessible as those for [Nightscout](https://nightscout.github.io/).
+To develop locally, run:
+```
+task go
+```
 
-Primarily meant to be used in conjunction with a Retool dashboard, as shown below.
+## Development and Deployment
+This project is primarily meant for personal use, so the steps outlined here are left mostly as a note to myself. The structure and layout is very opinionated and tailored to my usecases.
 
-<a href=".media/iv3_desktop_retool.png"><img src=".media/iv3_desktop_retool.png" height="250"/></a>
-<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" height="250"/></a>
+See `example-config.yaml` for more specific details.
+
+Setup will also require a few other things:
+- A `.env` file for things that are used by Task or docker compose
+    - `INFLUXDB_TOKEN=...` to access InfluxDB
+    - `IV3_ENV=dev` for dev environment
+- A `config.yaml` file for application-level settings
+    - Dexcom, DigitalOcean Spaces keys and secrets
+    - Insulin configs
+	- Alerting configs
+- A domain name, and SSL certificate for HTTPS (needed for Retool)
+    - This will be needed for authentication, and for Retool API integrations
+    - `certfile.crt`, `keyfile.key`
+
+### InfluxDB
+The configuration and data for InfluxDB are mounted on `_iv3_config` and `_iv3_data` respectively, remember to create those! Additionally, when starting the InfluxDB instance for the first time, we need to register and create an API token, see [**here**](https://hub.docker.com/_/influxdb) for details.
+
+Once that is done, remember to add it to the `config.yaml` file.
 
 ## What's Different?
 This time around, I want to:
@@ -59,16 +91,3 @@ For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](ht
 - [Retool](https://retool.com/)
 - [ntfy](https://ntfy.sh/)
 - Docker
-
-## Setup & Config
-Setup will also require a few other things, mostly left as a note to myself. See `example-config.yaml` for more details.
-- A .env file for things that have to be used by Task or docker compose
-    - `INFLUXDB_TOKEN=...` to access InfluxDB
-    - `IV3_ENV=dev` for dev environment
-- A config.yaml file for application-level settings
-    - Dexcom, Spaces keys and secrets
-    - Insulin types
-	- Alerting configs
-- A domain name, and an SSL certificate for HTTPS
-    - This will be needed for authentication, and for Retool API integrations
-    - `certfile.crt`, `keyfile.key`
