@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/algao1/iv3/config"
-	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/store"
 	"github.com/montanaflynn/stats"
 	"go.uber.org/zap"
 )
 
 type PointsReader interface {
-	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
+	ReadGlucosePoints(startTs, endTs int) ([]store.GlucosePoint, error)
 	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
 	ReadCarbPoints(startTs, endTs int) ([]store.CarbPoint, error)
 }
@@ -47,7 +46,7 @@ func (a *Analyzer) DayToDay(startTs, endTs int) (*DayToDayResult, error) {
 	}
 
 	inRange := 0.0
-	buckets := make([][]fetcher.GlucosePoint, 24*12)
+	buckets := make([][]store.GlucosePoint, 24*12)
 	glucoseValues := make([]float64, len(glucosePoints))
 
 	for i, point := range glucosePoints {

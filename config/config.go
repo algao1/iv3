@@ -35,6 +35,7 @@ type InsulinConfig struct {
 }
 
 type Iv3Config struct {
+	Unit                 string `yaml:"unit"`
 	Endpoint             string `yaml:"endpoint"`
 	MissingLongThreshold int    `yaml:"missing_long_threshold"`
 	HighThreshold        int    `yaml:"high_threshold"`
@@ -51,5 +52,9 @@ func (cfg *Config) Verify() error {
 	if cfg.Iv3.LowThreshold == 0 {
 		cfg.Iv3.LowThreshold = 100
 	}
+	if cfg.Iv3.Unit != "mmol/L" && cfg.Iv3.Unit != "mg/dL" {
+		return fmt.Errorf("incorrect unit provided: %s", cfg.Iv3.Unit)
+	}
+
 	return nil
 }

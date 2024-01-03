@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 )
 
@@ -26,7 +27,7 @@ const (
 )
 
 type GlucosePointsWriter interface {
-	WriteGlucosePoints(glucose []GlucosePoint) error
+	WriteGlucosePoints(glucose []store.GlucosePoint) error
 }
 
 type DexcomClient struct {
@@ -76,14 +77,7 @@ func (c *DexcomClient) writePeriodic() {
 	}
 }
 
-type GlucosePoint struct {
-	WT    string  `json:"WT"` // Not exactly sure what this stands for.
-	Value float64 `json:"Value"`
-	Trend string  `json:"Trend"`
-	Time  time.Time
-}
-
-func (c *DexcomClient) Glucose() ([]GlucosePoint, error) {
+func (c *DexcomClient) Glucose() ([]store.GlucosePoint, error) {
 	// This is very rudimentary retry logic.
 	// We only retry once on failure, try to recreate session again.
 	glucose, err := c.glucose()
@@ -122,7 +116,7 @@ func (c *DexcomClient) createSession() error {
 	return nil
 }
 
-func (c *DexcomClient) glucose() ([]GlucosePoint, error) {
+func (c *DexcomClient) glucose() ([]store.GlucosePoint, error) {
 	params := url.Values{
 		"sessionId": {c.sessionID},
 		"minutes":   {minuteMax},
@@ -137,7 +131,7 @@ func (c *DexcomClient) glucose() ([]GlucosePoint, error) {
 		return nil, fmt.Errorf("unable to make request: %w", err)
 	}
 
-	var glucose []GlucosePoint
+	var glucose []store.GlucosePoint
 	err = json.Unmarshal(body, &glucose)
 	if err != nil {
 		return nil, fmt.Errorf("unable to unmarshal json: %w", err)

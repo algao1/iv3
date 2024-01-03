@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/algao1/iv3/config"
-	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 )
 
 // TODO: Have a better way for dealing with unit conversions...
+// Maybe only do it for outputs?
 
 const (
 	PredLowGlucoseEvent     = "pred_low_glucose"
@@ -25,7 +25,7 @@ const (
 )
 
 type AlertingReadWriter interface {
-	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
+	ReadGlucosePoints(startTs, endTs int) ([]store.GlucosePoint, error)
 	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
 	ReadCarbPoints(startTs, endTs int) ([]store.CarbPoint, error)
 	WriteEventPoint(point store.EventPoint) error
@@ -36,9 +36,9 @@ type Alerter struct {
 	rw AlertingReadWriter
 
 	// Configs.
-	insPeriodType map[string]string
-	endpoint      string
-
+	unit                 string
+	insPeriodType        map[string]string
+	endpoint             string
 	missingLongThreshold time.Duration
 	lowThreshold         int
 	highThreshold        int
@@ -50,6 +50,7 @@ func NewAlerter(rw AlertingReadWriter, cfg config.Iv3Config,
 	insCfg []config.InsulinConfig, logger *zap.Logger) *Alerter {
 	a := &Alerter{
 		rw:                   rw,
+		unit:                 cfg.Unit,
 		insPeriodType:        make(map[string]string),
 		endpoint:             cfg.Endpoint,
 		missingLongThreshold: time.Duration(cfg.MissingLongThreshold) * time.Hour,
@@ -107,7 +108,7 @@ func (a *Alerter) checkPredictedGlucose() {
 		alert := Alert{
 			Title:    "Incoming Low Glucose",
 			Event:    PredLowGlucoseEvent,
-			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", predValue/18),
+			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", a.molarOrMass(predValue)),
 			Priority: "high",
 		}
 		if err = a.publishAlert(alert); err != nil {
@@ -167,8 +168,8 @@ func (a *Alerter) checkHighGlucose() {
 		return
 	}
 
-	curGlucose := points[len(points)-1].Value / 18
-	if curGlucose <= float64(a.highThreshold)/18 {
+	curGlucose := points[len(points)-1].Value
+	if curGlucose <= float64(a.highThreshold) {
 		return
 	}
 	if !a.noEventsInPast(HighGlucoseEvent, HighGlucoseWindow) {
@@ -179,8 +180,8 @@ func (a *Alerter) checkHighGlucose() {
 		Title: "High Glucose",
 		Event: HighGlucoseEvent,
 		Message: fmt.Sprintf("Glucose is %.1f and above target %.1f",
-			curGlucose,
-			float64(a.highThreshold)/18,
+			a.molarOrMass(curGlucose),
+			a.molarOrMass(float64(a.highThreshold)),
 		),
 		Priority: "high",
 	}
@@ -252,4 +253,11 @@ func (a *Alerter) publishAlert(alert Alert) error {
 		return fmt.Errorf("unable to write event to database: %w", err)
 	}
 	return nil
+}
+
+func (a *Alerter) molarOrMass(value float64) float64 {
+	if a.unit == "mmol/L" {
+		return value / 18
+	}
+	return value
 }

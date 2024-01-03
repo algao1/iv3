@@ -12,7 +12,6 @@ import (
 
 	"github.com/algao1/iv3/analysis"
 	"github.com/algao1/iv3/config"
-	"github.com/algao1/iv3/fetcher"
 	"github.com/algao1/iv3/store"
 	"go.uber.org/zap"
 )
@@ -24,7 +23,7 @@ const (
 )
 
 type PointsReadWriter interface {
-	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
+	ReadGlucosePoints(startTs, endTs int) ([]store.GlucosePoint, error)
 
 	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
 	WriteInsulinPoint(point store.InsulinPoint) error

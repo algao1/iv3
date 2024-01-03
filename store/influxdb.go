@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/algao1/iv3/fetcher"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
@@ -74,7 +73,7 @@ func NewInfluxDB(token, url string, logger *zap.Logger) (*InfluxDBClient, error)
 	return client, nil
 }
 
-func (c *InfluxDBClient) WriteGlucosePoints(glucose []fetcher.GlucosePoint) error {
+func (c *InfluxDBClient) WriteGlucosePoints(glucose []GlucosePoint) error {
 	writeAPI := c.client.WriteAPIBlocking(Org, GlucoseBucket)
 	for _, gp := range glucose {
 		fields := map[string]any{
@@ -92,7 +91,7 @@ func (c *InfluxDBClient) WriteGlucosePoints(glucose []fetcher.GlucosePoint) erro
 	return nil
 }
 
-func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error) {
+func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]GlucosePoint, error) {
 	queryAPI := c.client.QueryAPI(Org)
 	// Currently, this only grabs all the values, and not the trends.
 	// I am thinking if that is needed, we will need to remove the filter.
@@ -108,9 +107,9 @@ func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]fetcher.Glucos
 		return nil, fmt.Errorf("unable to read glucose points between %d and %d: %w", startTs, endTs, err)
 	}
 
-	glucose := make([]fetcher.GlucosePoint, 0)
+	glucose := make([]GlucosePoint, 0)
 	for result.Next() {
-		glucose = append(glucose, fetcher.GlucosePoint{
+		glucose = append(glucose, GlucosePoint{
 			Value: result.Record().Value().(float64),
 			Time:  result.Record().Time(),
 		})
