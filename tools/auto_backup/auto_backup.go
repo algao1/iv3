@@ -88,6 +88,12 @@ func (b *S3Backuper) backupAndUpload() error {
 
 	tarFilePath := ".data/auto_backup/archive_" + dateStr + ".tar.gz"
 	compressCmd := exec.Command("tar", "-zcvf", tarFilePath, backupPath)
+
+	b.logger.Info("compressing archived data",
+		zap.String("dateString", dateStr),
+		zap.String("tarFilePath", tarFilePath),
+	)
+
 	out, err = compressCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("compress cmd failed with %s: %w", out, err)

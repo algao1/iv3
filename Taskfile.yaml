@@ -8,6 +8,8 @@ tasks:
     deps: [ssl-gen]
     cmds:
       - docker compose build --parallel
+      - if [ $IV3_ENV == "dev" ]; then docker save -o iv3.tar iv3-iv3:latest; fi
+      # The equivalent is docker load -i iv3.tar
 
   all:
     desc: "Start all the containers"
@@ -62,6 +64,17 @@ tasks:
     vars:
       LATEST_VERSION:
         sh: ls -d .data/backup/* | tail -1
+      BACKUP_VERSION: "{{.BACKUP_VERSION | default .LATEST_VERSION }}"
+  
+  # TODO: temporary solution
+  idb-restore-auto:
+    desc: "Manually restore InfluxDB to the latest auto backup"
+    cmds:
+      - echo "restoring to version {{.BACKUP_VERSION}}"
+      - influx restore {{.BACKUP_VERSION}} --full -t $INFLUXDB_TOKEN
+    vars:
+      LATEST_VERSION:
+        sh: ls -d .data/auto_backup/* | tail -1
       BACKUP_VERSION: "{{.BACKUP_VERSION | default .LATEST_VERSION }}"
 
   # Docker install.

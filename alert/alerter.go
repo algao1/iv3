@@ -12,11 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	PredLowGlucoseEvent  = "pred_low_glucose"
-	PredLowGlucoseWindow = 5 * time.Minute
+// TODO: Have a better way for dealing with unit conversions...
 
-	MissingLongInsulinEvent  = "missing_long_insulin"
+const (
+	PredLowGlucoseEvent     = "pred_low_glucose"
+	HighGlucoseEvent        = "high_glucose"
+	MissingLongInsulinEvent = "missing_long_insulin"
+
+	PredLowGlucoseWindow     = 5 * time.Minute
+	HighGlucoseWindow        = 45 * time.Minute
 	MissingLongInsulinWindow = 1 * time.Hour
 )
 
@@ -24,7 +28,6 @@ type AlertingReadWriter interface {
 	ReadGlucosePoints(startTs, endTs int) ([]fetcher.GlucosePoint, error)
 	ReadInsulinPoints(startTs, endTs int) ([]store.InsulinPoint, error)
 	ReadCarbPoints(startTs, endTs int) ([]store.CarbPoint, error)
-
 	WriteEventPoint(point store.EventPoint) error
 	ReadEventPoints(startTs, endTs int) ([]store.EventPoint, error)
 }
@@ -38,6 +41,7 @@ type Alerter struct {
 
 	missingLongThreshold time.Duration
 	lowThreshold         int
+	highThreshold        int
 
 	logger *zap.Logger
 }
@@ -50,6 +54,7 @@ func NewAlerter(rw AlertingReadWriter, cfg config.Iv3Config,
 		endpoint:             cfg.Endpoint,
 		missingLongThreshold: time.Duration(cfg.MissingLongThreshold) * time.Hour,
 		lowThreshold:         cfg.LowThreshold,
+		highThreshold:        cfg.HighThreshold,
 		logger:               logger,
 	}
 	for _, ins := range insCfg {
@@ -61,33 +66,33 @@ func NewAlerter(rw AlertingReadWriter, cfg config.Iv3Config,
 		zap.Int("lowThreshold", a.lowThreshold),
 	)
 
-	go a.check()
+	go a.run()
 	return a
 }
 
-func (a *Alerter) check() {
-	predTicker := time.NewTicker(30 * time.Second)
-	missingLongTicker := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-predTicker.C:
-			a.checkPredGlucose()
-		case <-missingLongTicker.C:
-			a.checkMissingLongInsulin()
-		}
+func (a *Alerter) run() {
+	ticker := time.NewTicker(30 * time.Second)
+	for range ticker.C {
+		a.checkPredictedGlucose()
+		a.checkMissingLongInsulin()
+		a.checkHighGlucose()
 	}
 }
 
-func (a *Alerter) checkPredGlucose() {
-	windowStart, windowEnd := time.Now().Add(-30*time.Minute), time.Now()
+func (a *Alerter) checkPredictedGlucose() {
+	windowStart := time.Now().Add(-30 * time.Minute)
+	windowEnd := time.Now()
 
-	points, err := a.rw.ReadGlucosePoints(int(windowStart.Unix()), int(windowEnd.Unix()))
+	points, err := a.rw.ReadGlucosePoints(
+		int(windowStart.Unix()),
+		int(windowEnd.Unix()),
+	)
 	if err != nil {
 		a.logger.Error("error reading glucose points", zap.Error(err))
 		return
 	}
 	if len(points) < 3 {
-		a.logger.Info("not enough glucose points to check")
+		a.logger.Info("not enough points to predict glucose")
 		return
 	}
 
@@ -97,21 +102,16 @@ func (a *Alerter) checkPredGlucose() {
 	predValue := lastPoints[2].Value + trend*4
 	a.logger.Debug("predicted glucose", zap.Float64("value", predValue))
 
-	if predValue < float64(a.lowThreshold) && a.noEventsInPast(PredLowGlucoseEvent, PredLowGlucoseWindow) {
+	if predValue < float64(a.lowThreshold) &&
+		a.noEventsInPast(PredLowGlucoseEvent, PredLowGlucoseWindow) {
 		alert := Alert{
 			Title:    "Incoming Low Glucose",
+			Event:    PredLowGlucoseEvent,
 			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", predValue/18),
 			Priority: "high",
 		}
-		a.publishAlert(alert)
-
-		err = a.rw.WriteEventPoint(store.EventPoint{
-			Event:   PredLowGlucoseEvent,
-			Message: alert.Message,
-			Time:    time.Now(),
-		})
-		if err != nil {
-			a.logger.Error("error writing event point", zap.Error(err))
+		if err = a.publishAlert(alert); err != nil {
+			a.logger.Error("unable to publish alert", zap.Error(err))
 		}
 	}
 }
@@ -120,7 +120,10 @@ func (a *Alerter) checkMissingLongInsulin() {
 	windowStart := time.Now().Add(-a.missingLongThreshold)
 	windowEnd := time.Now()
 
-	points, err := a.rw.ReadInsulinPoints(int(windowStart.Unix()), int(windowEnd.Unix()))
+	points, err := a.rw.ReadInsulinPoints(
+		int(windowStart.Unix()),
+		int(windowEnd.Unix()),
+	)
 	if err != nil {
 		a.logger.Error("error reading insulin points", zap.Error(err))
 		return
@@ -138,24 +141,60 @@ func (a *Alerter) checkMissingLongInsulin() {
 
 	alert := Alert{
 		Title:    "Missing Long Insulin",
+		Event:    MissingLongInsulinEvent,
 		Message:  fmt.Sprintf("No long insulin in the past %s hours", a.missingLongThreshold),
 		Priority: "high",
 	}
-	a.publishAlert(alert)
+	if err = a.publishAlert(alert); err != nil {
+		a.logger.Error("unable to publish alert", zap.Error(err))
+	}
+}
 
-	err = a.rw.WriteEventPoint(store.EventPoint{
-		Event:   MissingLongInsulinEvent,
-		Message: alert.Message,
-		Time:    time.Now(),
-	})
+func (a *Alerter) checkHighGlucose() {
+	windowStart := time.Now().Add(-10 * time.Minute)
+	windowEnd := time.Now()
+
+	points, err := a.rw.ReadGlucosePoints(
+		int(windowStart.Unix()),
+		int(windowEnd.Unix()),
+	)
 	if err != nil {
-		a.logger.Error("error writing event point", zap.Error(err))
+		a.logger.Error("error reading glucose points", zap.Error(err))
+		return
+	}
+	if len(points) == 0 {
+		a.logger.Error("no glucose points found")
+		return
+	}
+
+	curGlucose := points[len(points)-1].Value / 18
+	if curGlucose <= float64(a.highThreshold)/18 {
+		return
+	}
+	if !a.noEventsInPast(HighGlucoseEvent, HighGlucoseWindow) {
+		return
+	}
+
+	alert := Alert{
+		Title: "High Glucose",
+		Event: HighGlucoseEvent,
+		Message: fmt.Sprintf("Glucose is %.1f and above target %.1f",
+			curGlucose,
+			float64(a.highThreshold)/18,
+		),
+		Priority: "high",
+	}
+	if err = a.publishAlert(alert); err != nil {
+		a.logger.Error("unable to publish alert", zap.Error(err))
 	}
 }
 
 func (a *Alerter) noEventsInPast(event string, d time.Duration) bool {
 	windowStart, windowEnd := time.Now().Add(-d), time.Now()
-	points, err := a.rw.ReadEventPoints(int(windowStart.Unix()), int(windowEnd.Unix()))
+	points, err := a.rw.ReadEventPoints(
+		int(windowStart.Unix()),
+		int(windowEnd.Unix()),
+	)
 	if err != nil {
 		a.logger.Error("error reading event points", zap.Error(err))
 		return false
@@ -171,13 +210,18 @@ func (a *Alerter) noEventsInPast(event string, d time.Duration) bool {
 
 type Alert struct {
 	Title    string
+	Event    string
 	Message  string
 	Priority string
 	Tags     []string
 }
 
-func (a *Alerter) publishAlert(alert Alert) {
-	req, _ := http.NewRequest("POST", "https://ntfy.sh/"+a.endpoint, strings.NewReader(alert.Message))
+func (a *Alerter) publishAlert(alert Alert) error {
+	req, err := http.NewRequest("POST", "https://ntfy.sh/"+a.endpoint, strings.NewReader(alert.Message))
+	if err != nil {
+		return fmt.Errorf("unable to make request: %w", err)
+	}
+
 	if alert.Title != "" {
 		req.Header.Set("Title", alert.Title)
 	}
@@ -188,10 +232,24 @@ func (a *Alerter) publishAlert(alert Alert) {
 		req.Header.Set("Tags", strings.Join(alert.Tags, ","))
 	}
 
-	http.DefaultClient.Do(req)
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to send request: %w", err)
+	}
+
 	a.logger.Info(
 		"published alert",
 		zap.String("title", alert.Title),
 		zap.String("message", alert.Message),
 	)
+
+	err = a.rw.WriteEventPoint(store.EventPoint{
+		Event:   alert.Event,
+		Message: alert.Message,
+		Time:    time.Now(),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to write event to database: %w", err)
+	}
+	return nil
 }

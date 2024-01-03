@@ -1,7 +1,7 @@
 <div align="center">
 
 # iv3
-Yet another T1D management solution.
+Yet another type 1 diabetes management solution.
 
 **Third time's the charm. Right?**
 
@@ -15,6 +15,8 @@ Yet another T1D management solution.
 - [Overview](#overview)
 - [Quickstart](#quickstart)
 - [Development and Deployment](#development-and-deployment)
+- [What's Different](#whats-different)
+- [Roadmap](#roadmap-todo)
 
 ## Overview
 This project is primarily meant to be used in conjunction with a Retool dashboard, as shown below.
@@ -86,7 +88,6 @@ So, I have decided to keep it more simple, and rely more heavily on third-party 
 For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
 
 ## Roadmap (Todo):
-- Sustained high glucose alerts
 - Different predictors for low glucose
 - Target glucose for different times of the day
 - Factor in insulin to carbs ratio
