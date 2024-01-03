@@ -15,46 +15,54 @@ Yet another type 1 diabetes management solution.
 - [Overview](#overview)
 - [Quickstart](#quickstart)
 - [Development and Deployment](#development-and-deployment)
-- [What's Different](#whats-different)
-- [Roadmap](#roadmap-todo)
+- [Configuration](#configuration)
+- [Roadmap](#roadmap)
 
 ## Overview
-This project is primarily meant to be used in conjunction with a Retool dashboard, as shown below.
+iv3 is a type 1 diabetes management solution, designed to make managing T1D easier.
 
-<div style="text-align: center;">
+Note, this project is **very experimental** and mostly meant for personal use. It is designed to be used in conjunction with tools like [Retool](https://retool.com/) and [ntfy](https://ntfy.sh/) for setting up cross-platform dashboards and alerts. Currently, only the backend service is provided, but you can use the endpoints to make your own dashboards.
+
+<div align="center">
 	<a href=".media/iv3_desktop_retool.png"><img src=".media/iv3_desktop_retool.png" height="250"/></a>
 	<a href=".media/iv3_mobile_retool.png"><img src=".media/iv3_mobile_retool.png" height="250"/></a>
 </div>
 
+### Motivation
+The reason for this project, was because I needed a solution that could:
+- Easily collect, export, and experiment with continuous glucose monitoring (CGM) data
+- Better alerts for things like missed insulin and forecasting (Dexcom would frequently not send me notifications for high glucose)
+- An alternative to closed-loop monitoring solutions (like [Nightscout](https://nightscout.github.io/)) since I personally still use pens
+- Most importantly, for fun!
+
 ## Quickstart
-To get started, run:
+To get started, configure `.env` and `config.yaml` under [Development and Deployment](#development-and-deployment) and [Configuration](#configuration), respectively.
+
+If you have [Task](https://taskfile.dev/) installed, run:
 ```
 task build
 task all
 ```
 
-To perform a backup or restore, run:
+If you prefer to use docker compose only, run:
 ```
-task idb-backup
-task idb-restore
+docker compose --env-file .env up -d
 ```
 
-To develop locally, run:
+Or, if you want to develop locally, run:
 ```
 task go
 ```
 
-See `Taskfile.yaml` for more specifics.
-
 ## Development and Deployment
-This project is primarily meant for personal use, so the steps outlined here are left mostly as a note to myself. The structure and layout is very opinionated and tailored to my usecases.
+This project is **primarily** meant for personal use, so the steps outlined here are left mostly as a note for myself. The configuration here is tailored for my specific usecases, but feel free to adapt them for your usecases.
 
-See `example-config.yaml` for more specific details.
+See `example-config.yaml` for some example configurations and additional details.
 
 Setup will also require a few other things:
-- A `.env` file for things that are used by Task or docker compose
+- A `.env` file for things that are used by Task and docker compose
     - `INFLUXDB_TOKEN=...` to access InfluxDB
-    - `IV3_ENV=dev` for dev environment
+    - `IV3_ENV=...` to specify the dev environment
 - A `config.yaml` file for application-level settings
     - Dexcom, DigitalOcean Spaces keys and secrets
     - Insulin and alerting configs
@@ -64,36 +72,52 @@ Setup will also require a few other things:
 	- **Note:** At this moment, these files need to be located inside `_iv3_ssl` since it is mounted onto iv3, and will not work otherwise
 
 ### InfluxDB
-The configuration and data for InfluxDB are mounted on `_iv3_config` and `_iv3_data` respectively, remember to create those! Additionally, when starting the InfluxDB instance for the first time, we need to register and create an API token, see [**here**](https://hub.docker.com/_/influxdb) for details.
+The configuration and data for InfluxDB are mounted on `_iv3_config` and `_iv3_data` respectively, so remember to create those! Additionally, when starting the InfluxDB instance for the first time, we need to register and create an API token, see [**here**](https://hub.docker.com/_/influxdb) for details.
 
-Once that is done, remember to add it to the `config.yaml` file.
+Once that is done, remember to also add it to the `config.yaml` file.
 
-### ntfy
-
+### Retool
 TBD.
 
-## What's Different?
-This time around, I want to:
-- Avoid having to write/support a Python graph rendering service
-- Avoid having to maintain Discord functionality
-- Redesign some architecture, hopefully making it easier to maintain
+### ntfy
+TBD.
 
-So, I have decided to keep it more simple, and rely more heavily on third-party integrations for certain functionality.
-- Use Retool for realtime dashboards and input
-- Use InfluxDB instead of MongoDB for storing timeseries data
-- More robust and periodic backups to blob storage
-- Better CI/CD, fearless and seamless deployments
-- Make the process easier to spin-up experiments for data pipelines
+### Deploy
+Save the images as a tarball, and load it.
+```
+<!-- Save the images as a tarball. -->
+task build
+docker save -o iv3.tar iv3-iv3:latest
 
-For previous versions, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
+<!-- Copy and load. -->
+scp iv3.tar addr:path
+docker load -i iv3.tar
+```
 
-## Roadmap (Todo):
-- Different predictors for low glucose
+### Operations
+To perform a backup or restore, run:
+```
+task idb-backup
+task idb-restore
+```
+
+See `Taskfile.yaml` for more commands.
+
+## Configuration
+TBD.
+
+## Roadmap:
+My TODO list in no particular order:
 - Target glucose for different times of the day
+- More configurable defaults and options
 - Factor in insulin to carbs ratio
+- Different predictors for low glucose
 - ChatGPT integration
 - Automatic S3 bucket cleanup (retention)
 - Update Retool graphs and dashboard
+- Dexcom G7 support
+
+For previous attempts on software for managing T1D, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
 
 ## Dependencies
 - [Task](https://taskfile.dev/)

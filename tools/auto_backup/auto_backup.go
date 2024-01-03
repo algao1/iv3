@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO: Prune all the old archives, but it hasn't been a problem yet...
+
 type S3Backuper struct {
 	client *s3.S3
 	token  string
