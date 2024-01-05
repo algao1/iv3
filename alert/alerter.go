@@ -106,9 +106,12 @@ func (a *Alerter) checkPredictedGlucose() {
 	if predValue < float64(a.lowThreshold) &&
 		a.noEventsInPast(PredLowGlucoseEvent, PredLowGlucoseWindow) {
 		alert := Alert{
-			Title:    "Incoming Low Glucose",
-			Event:    PredLowGlucoseEvent,
-			Message:  fmt.Sprintf("Glucose is predicted to be %.2f in 20 minutes", a.molarOrMass(predValue)),
+			Title: "Incoming Low Glucose",
+			Event: PredLowGlucoseEvent,
+			Message: fmt.Sprintf(
+				"Glucose is predicted to be %.2f in 20 minutes",
+				a.molarOrMass(predValue),
+			),
 			Priority: "high",
 		}
 		if err = a.publishAlert(alert); err != nil {
@@ -141,9 +144,12 @@ func (a *Alerter) checkMissingLongInsulin() {
 	}
 
 	alert := Alert{
-		Title:    "Missing Long Insulin",
-		Event:    MissingLongInsulinEvent,
-		Message:  fmt.Sprintf("No long insulin in the past %s hours", a.missingLongThreshold),
+		Title: "Missing Long Insulin",
+		Event: MissingLongInsulinEvent,
+		Message: fmt.Sprintf(
+			"No long insulin in the past %s hours",
+			a.missingLongThreshold,
+		),
 		Priority: "high",
 	}
 	if err = a.publishAlert(alert); err != nil {
@@ -218,7 +224,10 @@ type Alert struct {
 }
 
 func (a *Alerter) publishAlert(alert Alert) error {
-	req, err := http.NewRequest("POST", "https://ntfy.sh/"+a.endpoint, strings.NewReader(alert.Message))
+	req, err := http.NewRequest("POST",
+		"https://ntfy.sh/"+a.endpoint,
+		strings.NewReader(alert.Message),
+	)
 	if err != nil {
 		return fmt.Errorf("unable to make request: %w", err)
 	}

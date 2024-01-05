@@ -108,11 +108,11 @@ func main() {
 	s := server.NewHttpServer(
 		cfg.API.Username,
 		cfg.API.Password,
+		cfg,
 		influxClient,
 		analyzer,
 		logger.Named("httpServer"),
 	)
-	s.RegisterInsulin(cfg.Insulin)
 
 	logger.Info("everything started successfully!")
 	s.Serve() // Blocking.

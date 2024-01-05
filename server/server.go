@@ -44,24 +44,21 @@ type HttpServer struct {
 
 	readWriter PointsReadWriter
 	analyzer   Analyzer
-	insulin    []config.InsulinConfig
+	config     config.Config
 
 	logger *zap.Logger
 }
 
-func NewHttpServer(username, password string,
+func NewHttpServer(username, password string, config config.Config,
 	readWriter PointsReadWriter, analyzer Analyzer, logger *zap.Logger) *HttpServer {
 	return &HttpServer{
 		username:   username,
 		password:   password,
 		readWriter: readWriter,
 		analyzer:   analyzer,
+		config:     config,
 		logger:     logger,
 	}
-}
-
-func (s *HttpServer) RegisterInsulin(insulin []config.InsulinConfig) {
-	s.insulin = insulin
 }
 
 func (s *HttpServer) Serve() {
@@ -82,12 +79,12 @@ func (s *HttpServer) Serve() {
 }
 
 func (s *HttpServer) addHandlers(mux *http.ServeMux) {
+	mux.HandleFunc("/config", s.basicAuth(s.getConfigHandler))
 	mux.HandleFunc("/glucose", s.basicAuth(s.getGlucoseHandler))
 
 	mux.HandleFunc("/insulin", s.basicAuth(s.getInsulinHandler))
 	mux.HandleFunc("/insulin/write", s.basicAuth(s.writeInsulinHandler))
 	mux.HandleFunc("/insulin/delete", s.basicAuth(s.deleteInsulinHandler))
-	mux.HandleFunc("/insulinTypes", s.basicAuth(s.getInsulinTypesHandler))
 
 	mux.HandleFunc("/carbs", s.basicAuth(s.getCarbsHandler))
 	mux.HandleFunc("/carbs/write", s.basicAuth(s.writeCarbHandler))
@@ -173,9 +170,13 @@ func (s *HttpServer) deleteInsulinHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (s *HttpServer) getInsulinTypesHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.Info("got GET request for /insulinTypes", zap.Any("query", r.URL.Query()))
-	json.NewEncoder(w).Encode(s.insulin)
+func (s *HttpServer) getConfigHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.Info("got GET request for /config", zap.Any("query", r.URL.Query()))
+	configCpy := config.Config{
+		Insulin: s.config.Insulin,
+		Iv3:     s.config.Iv3,
+	}
+	json.NewEncoder(w).Encode(configCpy)
 }
 
 func (s *HttpServer) getCarbsHandler(w http.ResponseWriter, r *http.Request) {

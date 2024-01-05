@@ -108,13 +108,13 @@ TBD.
 
 ## Roadmap:
 My TODO list in no particular order:
+- Update Retool graphs and dashboard (mobile support)
 - Target glucose for different times of the day
 - More configurable defaults and options
 - Factor in insulin to carbs ratio
-- Different predictors for low glucose
 - ChatGPT integration
+- Different predictors for low glucose
 - Automatic S3 bucket cleanup (retention)
-- Update Retool graphs and dashboard
 - Dexcom G7 support
 
 For previous attempts on software for managing T1D, see [ichor](https://github.com/algao1/ichor) and [iv2](https://github.com/algao1/iv2).
