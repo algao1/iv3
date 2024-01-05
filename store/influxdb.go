@@ -98,7 +98,9 @@ func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]GlucosePoint, 
 	fluxQuery := fmt.Sprintf(`
         data = from(bucket: "%s")
             |> range(start: %d, stop: %d)
-            |> filter(fn: (r) => r["_field"] == "value")
+            |> filter(fn: (r) => r["_field"] == "value" or r["_field"] == "trend")
+			|> group(columns: ["_time", "_field"])
+			|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
             |> yield()
     `, GlucoseBucket, startTs, endTs)
 
@@ -110,7 +112,8 @@ func (c *InfluxDBClient) ReadGlucosePoints(startTs, endTs int) ([]GlucosePoint, 
 	glucose := make([]GlucosePoint, 0)
 	for result.Next() {
 		glucose = append(glucose, GlucosePoint{
-			Value: result.Record().Value().(float64),
+			Value: result.Record().ValueByKey("value").(float64),
+			Trend: result.Record().ValueByKey("trend").(string),
 			Time:  result.Record().Time(),
 		})
 	}
