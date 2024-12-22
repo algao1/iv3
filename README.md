@@ -121,7 +121,31 @@ See `Taskfile.yaml` for more commands.
 
 ## Configuration
 
-WIP.
+```yaml
+dexcom:
+    account: PLACEHOLDER
+    password: PLACEHOLDER
+api:
+    username: PLACEHOLDER
+    password: PLACEHOLDER
+spaces:
+    key: PLACEHOLDER
+    secret: PLACEHOLDER
+insulin:
+    - name: Humalog
+      duration: 4
+      peak: 1.5
+      period_type: rapid
+    - name: Tresiba
+      duration: 42
+      peak: 0
+      period_type: long
+iv3:
+    endpoint: PLACEHOLDER # for ntfy.
+    missing_long_threshold: 24 # hours
+    high_threshold: 180
+    low_threshold: 100
+```
 
 ## Roadmap:
 
