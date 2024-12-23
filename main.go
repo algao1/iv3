@@ -86,7 +86,10 @@ func main() {
 	fetcher.NewDexcom(
 		cfg.Dexcom.Account,
 		cfg.Dexcom.Password,
-		[]fetcher.GlucosePointsWriter{influxClient},
+		[]fetcher.GlucosePointsWriter{
+			store.NewDDClient(&cfg.Iv3),
+			influxClient,
+		},
 		logger.Named("dexcom"),
 	)
 

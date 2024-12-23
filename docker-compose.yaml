@@ -1,6 +1,5 @@
 version: "3.7"
 services:
-
   iv3:
     build:
       context: .
@@ -9,8 +8,9 @@ services:
       INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
       INFLUXDB_URL: "http://influxdb:8086"
       IV3_ENV: ${IV3_ENV}
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE}
     container_name: iv3
-    # restart: always
     volumes:
       - type: bind
         source: config.yaml
@@ -22,9 +22,8 @@ services:
       - influxdb
     ports:
       - "8080:8443"
-
   influxdb:
-    image: "influxdb:2.7.0"
+    image: influxdb:2.7.0
     container_name: influxdb
     volumes:
       - type: bind
@@ -35,3 +34,16 @@ services:
         target: /etc/influxdb2
     ports:
       - "8086:8086"
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    container_name: datadog-agent
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: true
+      DD_DOGSTATSD_PORT: 8125
+    ports:
+      - "8125:8125/udp"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro

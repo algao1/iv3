@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 dotenv: [".env"]
 
@@ -14,7 +14,7 @@ tasks:
   all:
     desc: "Start all the containers"
     cmds:
-      - docker compose --env-file .env up -d
+      - docker compose --env-file .env up -d --remove-orphans
 
   down:
     desc: "Tear down iv3"
@@ -39,9 +39,9 @@ tasks:
 
   idb-new:
     cmds:
-      - task idb-nv -- 
+      - task idb-nv --
         --volume $(pwd)/.data/influxdb2:/var/lib/influxdb2
-  
+
   idb-up:
     cmds:
       - docker start $(docker ps -a -qf "name=influxdb")
@@ -65,7 +65,7 @@ tasks:
       LATEST_VERSION:
         sh: ls -d .data/backup/* | tail -1
       BACKUP_VERSION: "{{.BACKUP_VERSION | default .LATEST_VERSION }}"
-  
+
   # TODO: temporary solution
   idb-restore-auto:
     desc: "Manually restore InfluxDB to the latest auto backup"
