@@ -17,8 +17,8 @@ import (
 
 const (
 	appID           = "d89443d2-327c-4a6f-89e5-496bbb0317db"
-	baseUrl         = "https://shareous1.dexcom.com/ShareWebServices/Services"
-	loginEndpoint   = "General/LoginPublisherAccountByName"
+	baseUrl         = "https://share2.dexcom.com/ShareWebServices/Services"
+	loginEndpoint   = "General/LoginPublisherAccountById"
 	authEndpoint    = "General/AuthenticatePublisherAccount"
 	glucoseEndpoint = "Publisher/ReadPublisherLatestGlucoseValues"
 
@@ -37,13 +37,14 @@ type DexcomClient struct {
 
 	accountName string
 	password    string
+	accountID   string
 	sessionID   string
 }
 
 func NewDexcom(account, password string,
 	writers []GlucosePointsWriter, logger *zap.Logger) *DexcomClient {
 	client := &DexcomClient{
-		client:      http.DefaultClient,
+		client:      &http.Client{Timeout: 5 * time.Second},
 		writers:     writers,
 		logger:      logger,
 		accountName: account,
@@ -58,20 +59,21 @@ func (c *DexcomClient) writePeriodic() {
 	for {
 		glucose, err := c.Glucose()
 		if err != nil {
-			c.logger.Warn("unable to get glucose points", zap.Error(err))
+			c.logger.Error("unable to get glucose points", zap.Error(err))
+			time.Sleep(10 * time.Second)
 			continue
 		}
 
 		for _, writer := range c.writers {
 			err := writer.WriteGlucosePoints(glucose)
 			if err != nil {
-				c.logger.Warn("unable to write glucose points to writer", zap.Error(err))
+				c.logger.Error("unable to write glucose points to writer", zap.Error(err))
 			}
 		}
 
 		dur := 5 * time.Minute
 		if len(glucose) > 0 {
-			dur = time.Until(glucose[0].Time.Add(5*time.Minute + 15*time.Second))
+			dur = time.Until(glucose[0].Time.Add(5*time.Minute + 10*time.Second))
 		}
 		time.Sleep(dur)
 	}
@@ -87,20 +89,39 @@ func (c *DexcomClient) Glucose() ([]store.GlucosePoint, error) {
 
 	err = c.createSession()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create session: %w", err)
 	}
-	return c.Glucose()
+	return c.glucose()
 }
 
-type loginRequest struct {
-	AccountName   string `json:"accountName"`
-	Password      string `json:"password"`
-	ApplicationID string `json:"applicationId"`
+func (c *DexcomClient) getAccountId() error {
+	req := authRequest{
+		AccountName:   c.accountName,
+		Password:      c.password,
+		ApplicationID: appID,
+	}
+	authUrl, _ := url.JoinPath(baseUrl, authEndpoint)
+
+	body, err := c.makeRequest(req, authUrl, http.MethodPost)
+	if err != nil {
+		c.logger.Warn("unable to make auth request", zap.Any("request", req), zap.Error(err))
+		return fmt.Errorf("unable to make request: %w", err)
+	}
+	c.accountID = strings.Trim(string(body), "\"")
+	c.logger.Info("succesfully got account ID", zap.String("accountID", c.accountID))
+
+	return nil
 }
 
 func (c *DexcomClient) createSession() error {
+	if c.accountID == "" {
+		if err := c.getAccountId(); err != nil {
+			return fmt.Errorf("unable to create session: %w", err)
+		}
+	}
+
 	req := loginRequest{
-		AccountName:   c.accountName,
+		AccountID:     c.accountID,
 		Password:      c.password,
 		ApplicationID: appID,
 	}
@@ -108,11 +129,12 @@ func (c *DexcomClient) createSession() error {
 
 	body, err := c.makeRequest(req, loginUrl, http.MethodPost)
 	if err != nil {
-		c.logger.Debug("unable to make session request", zap.Any("request", req), zap.Error(err))
+		c.logger.Warn("unable to make session request", zap.Any("request", req), zap.Error(err))
 		return fmt.Errorf("unable to make request: %w", err)
 	}
-
 	c.sessionID = strings.Trim(string(body), "\"")
+	c.logger.Info("succesfully got session ID", zap.String("sessionID", c.sessionID))
+
 	return nil
 }
 
@@ -127,7 +149,7 @@ func (c *DexcomClient) glucose() ([]store.GlucosePoint, error) {
 
 	body, err := c.makeRequest(nil, glucoseUrl, http.MethodGet)
 	if err != nil {
-		c.logger.Debug("unable to make glucose request", zap.Error(err))
+		c.logger.Warn("unable to make glucose request", zap.Error(err))
 		return nil, fmt.Errorf("unable to make request: %w", err)
 	}
 
@@ -166,6 +188,17 @@ func (c *DexcomClient) makeRequest(req any, url, method string) ([]byte, error) 
 		return nil, fmt.Errorf("unable to execute request: %w", err)
 	}
 	defer resp.Body.Close()
-
 	return io.ReadAll(resp.Body)
+}
+
+type loginRequest struct {
+	AccountID     string `json:"accountId"`
+	Password      string `json:"password"`
+	ApplicationID string `json:"applicationId"`
+}
+
+type authRequest struct {
+	AccountName   string `json:"accountName"`
+	Password      string `json:"password"`
+	ApplicationID string `json:"applicationId"`
 }
