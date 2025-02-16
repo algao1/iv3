@@ -68,7 +68,7 @@ func main() {
 	backuper, err := auto_backup.NewS3Backuper(
 		influxdbToken,
 		influxdbUrl,
-		cfg.Spaces,
+		cfg.S3,
 		logger.Named("s3Backuper"),
 	)
 	if err != nil {

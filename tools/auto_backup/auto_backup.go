@@ -21,14 +21,15 @@ type S3Backuper struct {
 	client *s3.S3
 	token  string
 	url    string
+	bucket string
 	logger *zap.Logger
 }
 
-func NewS3Backuper(token, url string, cfg config.SpacesConfig,
+func NewS3Backuper(token, url string, cfg config.S3Config,
 	logger *zap.Logger) (*S3Backuper, error) {
 	s3Config := &aws.Config{
 		Credentials: credentials.NewStaticCredentials(cfg.Key, cfg.Secret, ""),
-		Endpoint:    aws.String("https://nyc3.digitaloceanspaces.com"),
+		Endpoint:    aws.String(cfg.Endpoint),
 		Region:      aws.String("us-east-1"),
 		// Configures to use subdomain/virtual calling format.
 		// Depending on your version, alternatively use o.UsePathStyle = false
@@ -44,6 +45,7 @@ func NewS3Backuper(token, url string, cfg config.SpacesConfig,
 		client: s3Client,
 		token:  token,
 		url:    url,
+		bucket: cfg.Bucket,
 		logger: logger,
 	}
 
@@ -69,7 +71,6 @@ func (b *S3Backuper) Start() error {
 	}
 
 	s.StartAsync()
-	s.RunAll()
 	return nil
 }
 
@@ -108,7 +109,7 @@ func (b *S3Backuper) backupAndUpload() error {
 
 	awsFilePath := "auto_backup/archive_" + dateStr + ".tar.gz"
 	object := s3.PutObjectInput{
-		Bucket: aws.String("iv3"),
+		Bucket: aws.String(b.bucket),
 		Key:    &awsFilePath,
 		Body:   file,
 	}

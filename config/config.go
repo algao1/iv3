@@ -8,7 +8,7 @@ type Config struct {
 	Dexcom  DexcomConfig    `yaml:"dexcom"`
 	Insulin []InsulinConfig `yaml:"insulin"`
 	API     APIConfig       `yaml:"api"`
-	Spaces  SpacesConfig    `yaml:"spaces"`
+	S3      S3Config        `yaml:"s3"`
 	Iv3     Iv3Config       `yaml:"iv3"`
 }
 
@@ -22,9 +22,11 @@ type APIConfig struct {
 	Password string `yaml:"password"`
 }
 
-type SpacesConfig struct {
-	Key    string `yaml:"key"`
-	Secret string `yaml:"secret"`
+type S3Config struct {
+	Endpoint string `yaml:"endpoint"`
+	Bucket   string `yaml:"bucket"`
+	Key      string `yaml:"key"`
+	Secret   string `yaml:"secret"`
 }
 
 type InsulinConfig struct {
